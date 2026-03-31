@@ -1,0 +1,55 @@
+vim.api.nvim_create_user_command("Reader", function(opts)
+  require("reader").open(opts.fargs[1])
+end, {
+  nargs = "?",
+  complete = "file",
+  desc = "Open file in reader mode",
+})
+
+vim.api.nvim_create_user_command("ReaderClose", function()
+  require("reader").close()
+end, { desc = "Close reader mode" })
+
+vim.api.nvim_create_user_command("ReaderNext", function()
+  local state = require("reader")._state
+  if state then
+    require("reader.navigate").next_chapter(state)
+  end
+end, { desc = "Jump to next chapter" })
+
+vim.api.nvim_create_user_command("ReaderPrev", function()
+  local state = require("reader")._state
+  if state then
+    require("reader.navigate").prev_chapter(state)
+  end
+end, { desc = "Jump to previous chapter" })
+
+vim.api.nvim_create_user_command("ReaderToc", function()
+  local state = require("reader")._state
+  if state then
+    require("reader.navigate").show_toc(state)
+  end
+end, { desc = "Show table of contents" })
+
+vim.api.nvim_create_user_command("ReaderGo", function(opts)
+  local state = require("reader")._state
+  if not state then
+    return
+  end
+  local n = tonumber(opts.fargs[1])
+  if not n then
+    vim.notify("reader.nvim: Usage: :ReaderGo <chapter number>", vim.log.levels.ERROR)
+    return
+  end
+  if not state.chapters or n < 1 or n > #state.chapters then
+    vim.notify(
+      string.format("reader.nvim: Chapter %d out of range (1-%d)", n, state.chapters and #state.chapters or 0),
+      vim.log.levels.ERROR
+    )
+    return
+  end
+  require("reader.navigate").load_chapter(state, n)
+end, {
+  nargs = 1,
+  desc = "Jump to a specific chapter by number",
+})

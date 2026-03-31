@@ -2,6 +2,10 @@
 
 A distraction-free ebook reader for Neovim. Highlights the current paragraph and dims the rest. Supports `.md`, `.txt`, and `.epub` files.
 
+## Demo
+
+<video src="https://github.com/user-attachments/assets/3d85d123-cb9c-4d13-9c52-29398e1ea69f" controls="controls" width="100%"></video>
+
 ## Features
 
 - Paragraph-level focus highlighting with dimmed surroundings

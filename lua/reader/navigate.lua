@@ -76,9 +76,13 @@ function M.load_chapter(state, chapter_index)
   end
 
   local buffer = require("reader.buffer")
+  local bookmark = require("reader.bookmark")
   local chapter = state.chapters[chapter_index]
   state.current_chapter = chapter_index
   state.all_lines = chapter.lines
+
+  -- Persist chapter position immediately so it survives unexpected exits
+  bookmark.set(state.filepath, chapter_index, 1)
 
   -- Replace buffer content
   buffer.set_lines(state.buf, 0, -1, chapter.lines)

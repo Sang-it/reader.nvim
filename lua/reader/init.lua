@@ -6,6 +6,7 @@ local loader = require("reader.loader")
 local keymap = require("reader.keymap")
 local filetype = require("reader.filetype")
 local bookmark = require("reader.bookmark")
+local notes = require("reader.notes")
 
 local M = {}
 
@@ -104,6 +105,10 @@ function M.open(filepath)
     end
   end
 
+  -- Render notes as ghost text
+  notes.setup_highlights()
+  notes.render(state)
+
   -- Show chapter info for epub (auto-clears after 2s)
   if state.chapters and #state.chapters > 0 then
     local ch = state.chapters[state.current_chapter]
@@ -131,6 +136,7 @@ function M.close()
     line
   )
 
+  notes.clear(M._state.buf)
   if config.get().zen_mode then
     highlight.clear(M._state.buf)
     keymap.detach(M._state)

@@ -105,6 +105,9 @@ function M.load_chapter(state, chapter_index)
     end
   end
 
+  -- Re-render notes for the new chapter
+  require("reader.notes").render(state)
+
   local total = #state.chapters
   local msg = string.format("%s (%d/%d)", chapter.title, chapter_index, total)
   vim.api.nvim_echo({ { msg, "Comment" } }, false, {})

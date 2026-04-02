@@ -95,6 +95,34 @@ local function attach_shared(buf, state)
       nav.show_marks(state)
     end, opts)
   end
+
+  -- Note keymaps
+  local notes = require("reader.notes")
+  if cfg.keys.add_note then
+    vim.keymap.set("n", cfg.keys.add_note, function()
+      notes.add_note(state)
+    end, opts)
+  end
+  if cfg.keys.remove_note then
+    vim.keymap.set("n", cfg.keys.remove_note, function()
+      notes.remove_note(state)
+    end, opts)
+  end
+  if cfg.keys.next_note then
+    vim.keymap.set("n", cfg.keys.next_note, function()
+      notes.next_note(state)
+    end, opts)
+  end
+  if cfg.keys.prev_note then
+    vim.keymap.set("n", cfg.keys.prev_note, function()
+      notes.prev_note(state)
+    end, opts)
+  end
+  if cfg.keys.list_notes then
+    vim.keymap.set("n", cfg.keys.list_notes, function()
+      notes.show_notes(state)
+    end, opts)
+  end
 end
 
 ---@param buf number

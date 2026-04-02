@@ -13,6 +13,7 @@ A distraction-free ebook reader for Neovim. Highlights the current paragraph and
 - Zen-mode style centered floating window layout
 - Cursor auto-hides on blank lines between paragraphs
 - User bookmarks with navigation (`]b`/`[b`) and picker (`M`)
+- Notes displayed as ghost text below annotated lines
 - Remembers your reading position per file (chapter + line)
 - EPUB parsing is cached for fast reopening
 - Normal vim motions for navigation
@@ -63,6 +64,11 @@ use {
 :ReaderMark              " Add a bookmark at current position
 :ReaderMarks             " Show bookmarks picker
 :ReaderMarkDelete        " Remove a bookmark
+
+" Notes (displayed as ghost text)
+:ReaderNote              " Add a note at current position
+:ReaderNotes             " Show notes picker
+:ReaderNoteDelete        " Remove a note
 ```
 
 ## Keybindings
@@ -80,6 +86,11 @@ All standard vim motions work (`j`, `k`, `gg`, `G`, `Ctrl-d`, `Ctrl-u`, `/`, etc
 | `]b` | Jump to next bookmark |
 | `[b` | Jump to previous bookmark |
 | `M` | Show bookmarks picker |
+| `n` | Add a note |
+| `dn` | Remove a note |
+| `]n` | Jump to next note |
+| `[n` | Jump to previous note |
+| `N` | Show notes picker |
 
 ## Configuration
 
@@ -108,6 +119,11 @@ require("reader").setup({
     next_mark = "]b",
     prev_mark = "[b",
     list_marks = "M",
+    add_note = "n",
+    remove_note = "dn",
+    next_note = "]n",
+    prev_note = "[n",
+    list_notes = "N",
   },
 })
 ```

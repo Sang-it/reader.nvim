@@ -161,4 +161,64 @@ function M.get_marks(filepath)
   return bm[key].marks
 end
 
+--- Sort notes by chapter then line
+---@param notes table[]
+local function sort_notes(notes)
+  table.sort(notes, function(a, b)
+    local ac = a.chapter or 0
+    local bc = b.chapter or 0
+    if ac ~= bc then
+      return ac < bc
+    end
+    return a.line < b.line
+  end)
+end
+
+--- Add a note for a file
+---@param filepath string
+---@param chapter number|nil
+---@param line number 1-based cursor line
+---@param text string
+function M.add_note(filepath, chapter, line, text)
+  local bm = load()
+  local key = vim.fn.fnamemodify(filepath, ":p")
+  if not bm[key] then
+    bm[key] = { line = 1 }
+  end
+  if not bm[key].notes then
+    bm[key].notes = {}
+  end
+  table.insert(bm[key].notes, { chapter = chapter, line = line, text = text })
+  sort_notes(bm[key].notes)
+  save()
+end
+
+--- Remove a note by index
+---@param filepath string
+---@param index number 1-based
+function M.remove_note(filepath, index)
+  local bm = load()
+  local key = vim.fn.fnamemodify(filepath, ":p")
+  if not bm[key] or not bm[key].notes then
+    return
+  end
+  table.remove(bm[key].notes, index)
+  if #bm[key].notes == 0 then
+    bm[key].notes = nil
+  end
+  save()
+end
+
+--- Get all notes for a file
+---@param filepath string
+---@return table[]
+function M.get_notes(filepath)
+  local bm = load()
+  local key = vim.fn.fnamemodify(filepath, ":p")
+  if not bm[key] or not bm[key].notes then
+    return {}
+  end
+  return bm[key].notes
+end
+
 return M

@@ -20,6 +20,11 @@ M.defaults = {
     next_mark = "]b",
     prev_mark = "[b",
     list_marks = "M",
+    add_note = "n",
+    remove_note = "dn",
+    next_note = "]n",
+    prev_note = "[n",
+    list_notes = "N",
   },
 }
 

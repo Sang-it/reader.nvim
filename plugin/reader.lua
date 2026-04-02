@@ -52,6 +52,27 @@ vim.api.nvim_create_user_command("ReaderMarkDelete", function()
   end
 end, { desc = "Remove a bookmark" })
 
+vim.api.nvim_create_user_command("ReaderNote", function()
+  local state = require("reader")._state
+  if state then
+    require("reader.notes").add_note(state)
+  end
+end, { desc = "Add a note at current position" })
+
+vim.api.nvim_create_user_command("ReaderNotes", function()
+  local state = require("reader")._state
+  if state then
+    require("reader.notes").show_notes(state)
+  end
+end, { desc = "Show notes picker" })
+
+vim.api.nvim_create_user_command("ReaderNoteDelete", function()
+  local state = require("reader")._state
+  if state then
+    require("reader.notes").remove_note(state)
+  end
+end, { desc = "Remove a note" })
+
 vim.api.nvim_create_user_command("ReaderGo", function(opts)
   local state = require("reader")._state
   if not state then

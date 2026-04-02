@@ -28,6 +28,11 @@ M.defaults = {
     prev_note = "[n",
     list_notes = "N",
     toggle_notes = "gn",
+    add_highlight = "s",
+    remove_highlight = "ds",
+    next_highlight = "]s",
+    prev_highlight = "[s",
+    list_highlights = "S",
   },
 }
 

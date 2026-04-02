@@ -128,6 +128,34 @@ local function attach_shared(buf, state)
       notes.toggle(state)
     end, opts)
   end
+
+  -- Highlight keymaps
+  local marker = require("reader.marker")
+  if cfg.keys.add_highlight then
+    vim.keymap.set("v", cfg.keys.add_highlight, function()
+      marker.add_highlight(state)
+    end, opts)
+  end
+  if cfg.keys.remove_highlight then
+    vim.keymap.set("n", cfg.keys.remove_highlight, function()
+      marker.remove_highlight(state)
+    end, opts)
+  end
+  if cfg.keys.next_highlight then
+    vim.keymap.set("n", cfg.keys.next_highlight, function()
+      marker.next_highlight(state)
+    end, opts)
+  end
+  if cfg.keys.prev_highlight then
+    vim.keymap.set("n", cfg.keys.prev_highlight, function()
+      marker.prev_highlight(state)
+    end, opts)
+  end
+  if cfg.keys.list_highlights then
+    vim.keymap.set("n", cfg.keys.list_highlights, function()
+      marker.show_highlights(state)
+    end, opts)
+  end
 end
 
 ---@param buf number

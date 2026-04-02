@@ -221,4 +221,77 @@ function M.get_notes(filepath)
   return bm[key].notes
 end
 
+--- Sort highlights by chapter then line/col
+---@param highlights table[]
+local function sort_highlights(highlights)
+  table.sort(highlights, function(a, b)
+    local ac = a.chapter or 0
+    local bc = b.chapter or 0
+    if ac ~= bc then
+      return ac < bc
+    end
+    if a.start_line ~= b.start_line then
+      return a.start_line < b.start_line
+    end
+    return a.start_col < b.start_col
+  end)
+end
+
+--- Add a text highlight for a file
+---@param filepath string
+---@param chapter number|nil
+---@param start_line number 1-based
+---@param start_col number 0-based
+---@param end_line number 1-based
+---@param end_col number 0-based (exclusive)
+---@param text string preview of highlighted text
+function M.add_highlight(filepath, chapter, start_line, start_col, end_line, end_col, text)
+  local bm = load()
+  local key = vim.fn.fnamemodify(filepath, ":p")
+  if not bm[key] then
+    bm[key] = { line = 1 }
+  end
+  if not bm[key].highlights then
+    bm[key].highlights = {}
+  end
+  table.insert(bm[key].highlights, {
+    chapter = chapter,
+    start_line = start_line,
+    start_col = start_col,
+    end_line = end_line,
+    end_col = end_col,
+    text = text,
+  })
+  sort_highlights(bm[key].highlights)
+  save()
+end
+
+--- Remove a highlight by index
+---@param filepath string
+---@param index number 1-based
+function M.remove_highlight(filepath, index)
+  local bm = load()
+  local key = vim.fn.fnamemodify(filepath, ":p")
+  if not bm[key] or not bm[key].highlights then
+    return
+  end
+  table.remove(bm[key].highlights, index)
+  if #bm[key].highlights == 0 then
+    bm[key].highlights = nil
+  end
+  save()
+end
+
+--- Get all highlights for a file
+---@param filepath string
+---@return table[]
+function M.get_highlights(filepath)
+  local bm = load()
+  local key = vim.fn.fnamemodify(filepath, ":p")
+  if not bm[key] or not bm[key].highlights then
+    return {}
+  end
+  return bm[key].highlights
+end
+
 return M

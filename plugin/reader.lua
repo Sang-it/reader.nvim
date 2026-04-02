@@ -73,6 +73,20 @@ vim.api.nvim_create_user_command("ReaderNoteDelete", function()
   end
 end, { desc = "Remove a note" })
 
+vim.api.nvim_create_user_command("ReaderHighlights", function()
+  local state = require("reader")._state
+  if state then
+    require("reader.marker").show_highlights(state)
+  end
+end, { desc = "Show highlights picker" })
+
+vim.api.nvim_create_user_command("ReaderHighlightDelete", function()
+  local state = require("reader")._state
+  if state then
+    require("reader.marker").remove_highlight(state)
+  end
+end, { desc = "Remove a highlight" })
+
 vim.api.nvim_create_user_command("ReaderGo", function(opts)
   local state = require("reader")._state
   if not state then

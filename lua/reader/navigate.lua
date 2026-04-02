@@ -90,11 +90,14 @@ function M.load_chapter(state, chapter_index)
   -- Focus first paragraph
   if #state.paragraphs > 0 then
     local para = state.paragraphs[1]
-    highlight.focus_paragraph(state.buf, para.start, para.end_)
+    local cfg = require("reader.config").get()
     local win = vim.api.nvim_get_current_win()
     vim.api.nvim_win_set_cursor(win, { para.start + 1, 0 })
-    if require("reader.config").get().center_focus then
-      vim.cmd("normal! zz")
+    if cfg.zen_mode then
+      highlight.focus_paragraph(state.buf, para.start, para.end_)
+      if cfg.center_focus then
+        vim.cmd("normal! zz")
+      end
     end
   end
 

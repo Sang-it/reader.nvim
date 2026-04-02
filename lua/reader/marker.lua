@@ -6,8 +6,7 @@ local ns = vim.api.nvim_create_namespace("reader_marker")
 function M.setup_highlights()
   local normal = vim.api.nvim_get_hl(0, { name = "Normal", link = false })
   local bg = normal.bg or 0x1e1e1e
-  -- Use a warm highlight color
-  local hl_bg = vim.api.nvim_get_hl(0, { name = "Search", link = false }).bg or 0x4a3a1a
+  local hl_bg = vim.api.nvim_get_hl(0, { name = "Visual", link = false }).bg or 0x264f78
   vim.api.nvim_set_hl(0, "ReaderMarker", { bg = hl_bg })
 end
 

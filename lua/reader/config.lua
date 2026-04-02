@@ -7,6 +7,8 @@ M.defaults = {
   zen_mode = true,
   -- Highlight current paragraph and dim the rest in zen mode
   focus_paragraph = true,
+  -- Dim all text instead of focusing paragraphs
+  use_dimtext = false,
   -- Center the focused paragraph in the viewport
   center_focus = true,
   -- Hide cursor on whitespace: "whitespace" (only on blank chars), "always", or false

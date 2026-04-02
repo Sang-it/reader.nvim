@@ -44,6 +44,24 @@ function M.focus_paragraph(buf, para_start, para_end)
   end
 end
 
+--- Dim all text in the buffer
+---@param buf number
+function M.dim_all(buf)
+  if not vim.api.nvim_buf_is_valid(buf) then
+    return
+  end
+  vim.api.nvim_buf_clear_namespace(buf, ns, 0, -1)
+  local line_count = vim.api.nvim_buf_line_count(buf)
+  if line_count > 0 then
+    vim.api.nvim_buf_set_extmark(buf, ns, 0, 0, {
+      end_row = line_count,
+      hl_group = "ReaderDim",
+      hl_eol = true,
+      priority = 200,
+    })
+  end
+end
+
 function M.clear(buf)
   if vim.api.nvim_buf_is_valid(buf) then
     vim.api.nvim_buf_clear_namespace(buf, ns, 0, -1)

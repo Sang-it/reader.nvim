@@ -22,7 +22,7 @@ function M.open(filepath)
   if not filepath or filepath == "" then
     filepath = vim.api.nvim_buf_get_name(0)
     if filepath == "" then
-      vim.notify("reader.nvim: No file specified", vim.log.levels.ERROR)
+      require("reader.util").notify("reader.nvim: No file specified", vim.log.levels.ERROR)
       return
     end
   end
@@ -35,13 +35,13 @@ function M.open(filepath)
   local cfg = config.get()
   local zen = cfg.zen_mode
 
-  if zen and cfg.focus_paragraph then
+  if zen and (cfg.focus_paragraph or cfg.use_dimtext) then
     highlight.setup_highlights()
   end
 
   local ok, content = pcall(filetype.load, filepath)
   if not ok then
-    vim.notify("reader.nvim: " .. tostring(content), vim.log.levels.ERROR)
+    require("reader.util").notify("reader.nvim: " .. tostring(content), vim.log.levels.ERROR)
     return
   end
 
@@ -68,7 +68,7 @@ function M.open(filepath)
   state.paragraphs = navigate.detect_paragraphs(state.all_lines)
 
   if #state.paragraphs == 0 then
-    vim.notify("reader.nvim: No content found", vim.log.levels.WARN)
+    require("reader.util").notify("reader.nvim: No content found", vim.log.levels.WARN)
     return
   end
 
@@ -84,16 +84,20 @@ function M.open(filepath)
       vim.api.nvim_win_set_cursor(win, { line, 0 })
       local index = navigate.find_current(state.paragraphs, line - 1)
       state.current_index = index
-      if cfg.focus_paragraph then
+      if cfg.focus_paragraph and not cfg.use_dimtext then
         highlight.focus_paragraph(buf, state.paragraphs[index].start, state.paragraphs[index].end_)
       end
     else
       state.current_index = 1
       local para = state.paragraphs[1]
-      if cfg.focus_paragraph then
+      if cfg.focus_paragraph and not cfg.use_dimtext then
         highlight.focus_paragraph(buf, para.start, para.end_)
       end
       vim.api.nvim_win_set_cursor(win, { para.start + 1, 0 })
+    end
+
+    if cfg.use_dimtext then
+      highlight.dim_all(buf)
     end
 
     if cfg.center_focus then

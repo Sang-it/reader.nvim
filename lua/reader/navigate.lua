@@ -61,7 +61,7 @@ function M.update_focus(state)
   local para = state.paragraphs[index]
   if para then
     local cfg = require("reader.config").get()
-    if cfg.focus_paragraph then
+    if cfg.focus_paragraph and not cfg.use_dimtext then
       highlight.focus_paragraph(state.buf, para.start, para.end_)
     end
     if cfg.center_focus then
@@ -101,7 +101,9 @@ function M.load_chapter(state, chapter_index)
     local win = vim.api.nvim_get_current_win()
     vim.api.nvim_win_set_cursor(win, { para.start + 1, 0 })
     if cfg.zen_mode then
-      if cfg.focus_paragraph then
+      if cfg.use_dimtext then
+        highlight.dim_all(state.buf)
+      elseif cfg.focus_paragraph then
         highlight.focus_paragraph(state.buf, para.start, para.end_)
       end
       if cfg.center_focus then
@@ -131,7 +133,7 @@ function M.next_chapter(state)
   end
   local next_idx = (state.current_chapter or 1) + 1
   if next_idx > #state.chapters then
-    vim.notify("reader.nvim: Last chapter", vim.log.levels.INFO)
+    require("reader.util").notify("reader.nvim: Last chapter", vim.log.levels.INFO)
     return
   end
   M.load_chapter(state, next_idx)
@@ -145,7 +147,7 @@ function M.prev_chapter(state)
   end
   local prev_idx = (state.current_chapter or 1) - 1
   if prev_idx < 1 then
-    vim.notify("reader.nvim: First chapter", vim.log.levels.INFO)
+    require("reader.util").notify("reader.nvim: First chapter", vim.log.levels.INFO)
     return
   end
   M.load_chapter(state, prev_idx)
@@ -155,7 +157,7 @@ end
 ---@param state ReaderState
 function M.show_toc(state)
   if not state.chapters then
-    vim.notify("reader.nvim: No table of contents", vim.log.levels.INFO)
+    require("reader.util").notify("reader.nvim: No table of contents", vim.log.levels.INFO)
     return
   end
   local items = {}
@@ -188,7 +190,7 @@ function M.add_mark(state)
     end
     vim.schedule(function()
       bookmark.add_mark(state.filepath, chapter, line, input)
-      vim.notify("reader.nvim: Bookmark added", vim.log.levels.INFO)
+      require("reader.util").notify("reader.nvim: Bookmark added", vim.log.levels.INFO)
     end)
   end)
 end
@@ -199,7 +201,7 @@ function M.remove_mark(state)
   local bookmark = require("reader.bookmark")
   local marks = bookmark.get_marks(state.filepath)
   if #marks == 0 then
-    vim.notify("reader.nvim: No bookmarks", vim.log.levels.INFO)
+    require("reader.util").notify("reader.nvim: No bookmarks", vim.log.levels.INFO)
     return
   end
 
@@ -218,7 +220,7 @@ function M.remove_mark(state)
     end
     vim.schedule(function()
       bookmark.remove_mark(state.filepath, idx)
-      vim.notify("reader.nvim: Bookmark removed", vim.log.levels.INFO)
+      require("reader.util").notify("reader.nvim: Bookmark removed", vim.log.levels.INFO)
     end)
   end)
 end
@@ -256,7 +258,7 @@ local function goto_mark(state, mark)
   if cfg.zen_mode then
     local index = M.find_current(state.paragraphs, line - 1)
     state.current_index = index
-    if cfg.focus_paragraph then
+    if not cfg.use_dimtext and cfg.focus_paragraph then
       local para = state.paragraphs[index]
       if para then
         highlight.focus_paragraph(state.buf, para.start, para.end_)
@@ -274,7 +276,7 @@ function M.next_mark(state)
   local bookmark = require("reader.bookmark")
   local marks = bookmark.get_marks(state.filepath)
   if #marks == 0 then
-    vim.notify("reader.nvim: No bookmarks", vim.log.levels.INFO)
+    require("reader.util").notify("reader.nvim: No bookmarks", vim.log.levels.INFO)
     return
   end
 
@@ -293,7 +295,7 @@ function M.next_mark(state)
       return
     end
   end
-  vim.notify("reader.nvim: No next bookmark", vim.log.levels.INFO)
+  require("reader.util").notify("reader.nvim: No next bookmark", vim.log.levels.INFO)
 end
 
 --- Jump to previous bookmark
@@ -302,7 +304,7 @@ function M.prev_mark(state)
   local bookmark = require("reader.bookmark")
   local marks = bookmark.get_marks(state.filepath)
   if #marks == 0 then
-    vim.notify("reader.nvim: No bookmarks", vim.log.levels.INFO)
+    require("reader.util").notify("reader.nvim: No bookmarks", vim.log.levels.INFO)
     return
   end
 
@@ -322,7 +324,7 @@ function M.prev_mark(state)
       return
     end
   end
-  vim.notify("reader.nvim: No previous bookmark", vim.log.levels.INFO)
+  require("reader.util").notify("reader.nvim: No previous bookmark", vim.log.levels.INFO)
 end
 
 --- Show bookmarks picker and jump to selected
@@ -331,7 +333,7 @@ function M.show_marks(state)
   local bookmark = require("reader.bookmark")
   local marks = bookmark.get_marks(state.filepath)
   if #marks == 0 then
-    vim.notify("reader.nvim: No bookmarks", vim.log.levels.INFO)
+    require("reader.util").notify("reader.nvim: No bookmarks", vim.log.levels.INFO)
     return
   end
 

@@ -67,7 +67,7 @@ end
 function M.toggle(state)
   hidden = not hidden
   M.render(state)
-  vim.notify("reader.nvim: Highlights " .. (hidden and "hidden" or "visible"), vim.log.levels.INFO)
+  require("reader.util").notify("reader.nvim: Highlights " .. (hidden and "hidden" or "visible"), vim.log.levels.INFO)
 end
 
 --- Add a highlight from visual selection
@@ -112,7 +112,7 @@ function M.add_highlight(state)
 
   bookmark.add_highlight(state.filepath, chapter, sl, sc, el, ec, text)
   M.render(state)
-  vim.notify("reader.nvim: Highlight added", vim.log.levels.INFO)
+  require("reader.util").notify("reader.nvim: Highlight added", vim.log.levels.INFO)
 end
 
 --- Remove a highlight via picker
@@ -121,7 +121,7 @@ function M.remove_highlight(state)
   local bookmark = require("reader.bookmark")
   local all_hl = bookmark.get_highlights(state.filepath)
   if #all_hl == 0 then
-    vim.notify("reader.nvim: No highlights", vim.log.levels.INFO)
+    require("reader.util").notify("reader.nvim: No highlights", vim.log.levels.INFO)
     return
   end
 
@@ -144,7 +144,7 @@ function M.remove_highlight(state)
     vim.schedule(function()
       bookmark.remove_highlight(state.filepath, idx)
       M.render(state)
-      vim.notify("reader.nvim: Highlight removed", vim.log.levels.INFO)
+      require("reader.util").notify("reader.nvim: Highlight removed", vim.log.levels.INFO)
     end)
   end)
 end
@@ -155,7 +155,7 @@ function M.next_highlight(state)
   local bookmark = require("reader.bookmark")
   local all_hl = bookmark.get_highlights(state.filepath)
   if #all_hl == 0 then
-    vim.notify("reader.nvim: No highlights", vim.log.levels.INFO)
+    require("reader.util").notify("reader.nvim: No highlights", vim.log.levels.INFO)
     return
   end
 
@@ -178,7 +178,7 @@ function M.next_highlight(state)
       return
     end
   end
-  vim.notify("reader.nvim: No next highlight", vim.log.levels.INFO)
+  require("reader.util").notify("reader.nvim: No next highlight", vim.log.levels.INFO)
 end
 
 --- Jump to previous highlight
@@ -187,7 +187,7 @@ function M.prev_highlight(state)
   local bookmark = require("reader.bookmark")
   local all_hl = bookmark.get_highlights(state.filepath)
   if #all_hl == 0 then
-    vim.notify("reader.nvim: No highlights", vim.log.levels.INFO)
+    require("reader.util").notify("reader.nvim: No highlights", vim.log.levels.INFO)
     return
   end
 
@@ -211,7 +211,7 @@ function M.prev_highlight(state)
       return
     end
   end
-  vim.notify("reader.nvim: No previous highlight", vim.log.levels.INFO)
+  require("reader.util").notify("reader.nvim: No previous highlight", vim.log.levels.INFO)
 end
 
 --- Show all highlights in a picker and jump to selected
@@ -220,7 +220,7 @@ function M.show_highlights(state)
   local bookmark = require("reader.bookmark")
   local all_hl = bookmark.get_highlights(state.filepath)
   if #all_hl == 0 then
-    vim.notify("reader.nvim: No highlights", vim.log.levels.INFO)
+    require("reader.util").notify("reader.nvim: No highlights", vim.log.levels.INFO)
     return
   end
 

@@ -14,4 +14,25 @@ function M.blend(fg, bg, alpha)
   return r * 65536 + g * 256 + b
 end
 
+--- Show a message that auto-clears after 2s in zen mode, or uses vim.notify otherwise
+---@param msg string
+---@param level number|nil vim.log.levels value
+function M.notify(msg, level)
+  local cfg = require("reader.config").get()
+  if cfg.zen_mode then
+    local hl = "Comment"
+    if level == vim.log.levels.ERROR then
+      hl = "ErrorMsg"
+    elseif level == vim.log.levels.WARN then
+      hl = "WarningMsg"
+    end
+    vim.api.nvim_echo({ { msg, hl } }, false, {})
+    vim.defer_fn(function()
+      vim.api.nvim_echo({ { "" } }, false, {})
+    end, 2000)
+  else
+    vim.notify(msg, level)
+  end
+end
+
 return M

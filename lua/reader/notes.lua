@@ -87,7 +87,7 @@ end
 function M.toggle(state)
   hidden = not hidden
   M.render(state)
-  vim.notify("reader.nvim: Notes " .. (hidden and "hidden" or "visible"), vim.log.levels.INFO)
+  require("reader.util").notify("reader.nvim: Notes " .. (hidden and "hidden" or "visible"), vim.log.levels.INFO)
 end
 
 --- Add a note from visual selection
@@ -119,7 +119,7 @@ function M.add_note(state)
     vim.schedule(function()
       bookmark.add_note(state.filepath, chapter, sl, sc, el, ec, input)
       M.render(state)
-      vim.notify("reader.nvim: Note added", vim.log.levels.INFO)
+      require("reader.util").notify("reader.nvim: Note added", vim.log.levels.INFO)
     end)
   end)
 end
@@ -130,7 +130,7 @@ function M.remove_note(state)
   local bookmark = require("reader.bookmark")
   local all_notes = bookmark.get_notes(state.filepath)
   if #all_notes == 0 then
-    vim.notify("reader.nvim: No notes", vim.log.levels.INFO)
+    require("reader.util").notify("reader.nvim: No notes", vim.log.levels.INFO)
     return
   end
 
@@ -153,7 +153,7 @@ function M.remove_note(state)
     vim.schedule(function()
       bookmark.remove_note(state.filepath, idx)
       M.render(state)
-      vim.notify("reader.nvim: Note removed", vim.log.levels.INFO)
+      require("reader.util").notify("reader.nvim: Note removed", vim.log.levels.INFO)
     end)
   end)
 end
@@ -164,7 +164,7 @@ function M.next_note(state)
   local bookmark = require("reader.bookmark")
   local all_notes = bookmark.get_notes(state.filepath)
   if #all_notes == 0 then
-    vim.notify("reader.nvim: No notes", vim.log.levels.INFO)
+    require("reader.util").notify("reader.nvim: No notes", vim.log.levels.INFO)
     return
   end
 
@@ -189,7 +189,7 @@ function M.next_note(state)
       return
     end
   end
-  vim.notify("reader.nvim: No next note", vim.log.levels.INFO)
+  require("reader.util").notify("reader.nvim: No next note", vim.log.levels.INFO)
 end
 
 --- Jump to previous note
@@ -198,7 +198,7 @@ function M.prev_note(state)
   local bookmark = require("reader.bookmark")
   local all_notes = bookmark.get_notes(state.filepath)
   if #all_notes == 0 then
-    vim.notify("reader.nvim: No notes", vim.log.levels.INFO)
+    require("reader.util").notify("reader.nvim: No notes", vim.log.levels.INFO)
     return
   end
 
@@ -224,7 +224,7 @@ function M.prev_note(state)
       return
     end
   end
-  vim.notify("reader.nvim: No previous note", vim.log.levels.INFO)
+  require("reader.util").notify("reader.nvim: No previous note", vim.log.levels.INFO)
 end
 
 --- Show all notes in a picker and jump to selected
@@ -233,7 +233,7 @@ function M.show_notes(state)
   local bookmark = require("reader.bookmark")
   local all_notes = bookmark.get_notes(state.filepath)
   if #all_notes == 0 then
-    vim.notify("reader.nvim: No notes", vim.log.levels.INFO)
+    require("reader.util").notify("reader.nvim: No notes", vim.log.levels.INFO)
     return
   end
 

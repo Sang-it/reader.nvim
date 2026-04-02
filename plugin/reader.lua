@@ -31,6 +31,27 @@ vim.api.nvim_create_user_command("ReaderToc", function()
   end
 end, { desc = "Show table of contents" })
 
+vim.api.nvim_create_user_command("ReaderMark", function()
+  local state = require("reader")._state
+  if state then
+    require("reader.navigate").add_mark(state)
+  end
+end, { desc = "Add a bookmark at current position" })
+
+vim.api.nvim_create_user_command("ReaderMarks", function()
+  local state = require("reader")._state
+  if state then
+    require("reader.navigate").show_marks(state)
+  end
+end, { desc = "Show bookmarks picker" })
+
+vim.api.nvim_create_user_command("ReaderMarkDelete", function()
+  local state = require("reader")._state
+  if state then
+    require("reader.navigate").remove_mark(state)
+  end
+end, { desc = "Remove a bookmark" })
+
 vim.api.nvim_create_user_command("ReaderGo", function(opts)
   local state = require("reader")._state
   if not state then

@@ -15,6 +15,11 @@ M.defaults = {
     toc = "t",
     next_chapter = "]c",
     prev_chapter = "[c",
+    add_mark = "m",
+    remove_mark = "dm",
+    next_mark = "]b",
+    prev_mark = "[b",
+    list_marks = "M",
   },
 }
 

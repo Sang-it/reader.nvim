@@ -165,4 +165,195 @@ function M.show_toc(state)
   end)
 end
 
+--- Add a bookmark at the current cursor position
+---@param state ReaderState
+function M.add_mark(state)
+  local bookmark = require("reader.bookmark")
+  local win = vim.api.nvim_get_current_win()
+  local line = vim.api.nvim_win_get_cursor(win)[1]
+  local chapter = state.chapters and state.current_chapter or nil
+
+  -- Build a default label from the line content
+  local buf_line = vim.api.nvim_buf_get_lines(state.buf, line - 1, line, false)[1] or ""
+  local label = buf_line:match("^%s*(.-)%s*$") or ""
+  if #label > 60 then
+    label = label:sub(1, 57) .. "..."
+  end
+  if label == "" then
+    label = "Line " .. line
+  end
+
+  vim.ui.input({ prompt = "Bookmark label: ", default = label }, function(input)
+    if not input or input == "" then
+      return
+    end
+    vim.schedule(function()
+      bookmark.add_mark(state.filepath, chapter, line, input)
+      vim.notify("reader.nvim: Bookmark added", vim.log.levels.INFO)
+    end)
+  end)
+end
+
+--- Remove a bookmark via picker
+---@param state ReaderState
+function M.remove_mark(state)
+  local bookmark = require("reader.bookmark")
+  local marks = bookmark.get_marks(state.filepath)
+  if #marks == 0 then
+    vim.notify("reader.nvim: No bookmarks", vim.log.levels.INFO)
+    return
+  end
+
+  local items = {}
+  for i, mark in ipairs(marks) do
+    local prefix = ""
+    if mark.chapter and state.chapters then
+      prefix = string.format("[Ch.%d] ", mark.chapter)
+    end
+    items[i] = string.format("%s%s (line %d)", prefix, mark.label, mark.line)
+  end
+
+  vim.ui.select(items, { prompt = "Remove bookmark:" }, function(_, idx)
+    if not idx then
+      return
+    end
+    vim.schedule(function()
+      bookmark.remove_mark(state.filepath, idx)
+      vim.notify("reader.nvim: Bookmark removed", vim.log.levels.INFO)
+    end)
+  end)
+end
+
+--- Find the current mark index based on cursor position
+---@param marks table[]
+---@param chapter number|nil
+---@param line number 1-based
+---@return number|nil index of current or preceding mark
+local function find_current_mark(marks, chapter, line)
+  local ch = chapter or 0
+  local best = nil
+  for i, mark in ipairs(marks) do
+    local mc = mark.chapter or 0
+    if mc < ch or (mc == ch and mark.line <= line) then
+      best = i
+    end
+  end
+  return best
+end
+
+--- Jump to a specific mark
+---@param state ReaderState
+---@param mark table {chapter, line, label}
+local function goto_mark(state, mark)
+  if mark.chapter and state.chapters and mark.chapter ~= state.current_chapter then
+    M.load_chapter(state, mark.chapter)
+  end
+  local win = vim.api.nvim_get_current_win()
+  local max_line = vim.api.nvim_buf_line_count(state.buf)
+  local line = math.min(mark.line, max_line)
+  vim.api.nvim_win_set_cursor(win, { line, 0 })
+
+  local cfg = require("reader.config").get()
+  if cfg.zen_mode then
+    local index = M.find_current(state.paragraphs, line - 1)
+    state.current_index = index
+    local para = state.paragraphs[index]
+    if para then
+      highlight.focus_paragraph(state.buf, para.start, para.end_)
+    end
+    if cfg.center_focus then
+      vim.cmd("normal! zz")
+    end
+  end
+end
+
+--- Jump to next bookmark
+---@param state ReaderState
+function M.next_mark(state)
+  local bookmark = require("reader.bookmark")
+  local marks = bookmark.get_marks(state.filepath)
+  if #marks == 0 then
+    vim.notify("reader.nvim: No bookmarks", vim.log.levels.INFO)
+    return
+  end
+
+  local chapter = state.chapters and state.current_chapter or nil
+  local win = vim.api.nvim_get_current_win()
+  local line = vim.api.nvim_win_get_cursor(win)[1]
+  local ch = chapter or 0
+
+  -- Find first mark strictly after current position
+  for i, mark in ipairs(marks) do
+    local mc = mark.chapter or 0
+    if mc > ch or (mc == ch and mark.line > line) then
+      goto_mark(state, mark)
+      vim.api.nvim_echo({ { string.format("Bookmark %d/%d: %s", i, #marks, mark.label), "Comment" } }, false, {})
+      vim.defer_fn(function() vim.api.nvim_echo({ { "" } }, false, {}) end, 2000)
+      return
+    end
+  end
+  vim.notify("reader.nvim: No next bookmark", vim.log.levels.INFO)
+end
+
+--- Jump to previous bookmark
+---@param state ReaderState
+function M.prev_mark(state)
+  local bookmark = require("reader.bookmark")
+  local marks = bookmark.get_marks(state.filepath)
+  if #marks == 0 then
+    vim.notify("reader.nvim: No bookmarks", vim.log.levels.INFO)
+    return
+  end
+
+  local chapter = state.chapters and state.current_chapter or nil
+  local win = vim.api.nvim_get_current_win()
+  local line = vim.api.nvim_win_get_cursor(win)[1]
+  local ch = chapter or 0
+
+  -- Find last mark strictly before current position
+  for i = #marks, 1, -1 do
+    local mark = marks[i]
+    local mc = mark.chapter or 0
+    if mc < ch or (mc == ch and mark.line < line) then
+      goto_mark(state, mark)
+      vim.api.nvim_echo({ { string.format("Bookmark %d/%d: %s", i, #marks, mark.label), "Comment" } }, false, {})
+      vim.defer_fn(function() vim.api.nvim_echo({ { "" } }, false, {}) end, 2000)
+      return
+    end
+  end
+  vim.notify("reader.nvim: No previous bookmark", vim.log.levels.INFO)
+end
+
+--- Show bookmarks picker and jump to selected
+---@param state ReaderState
+function M.show_marks(state)
+  local bookmark = require("reader.bookmark")
+  local marks = bookmark.get_marks(state.filepath)
+  if #marks == 0 then
+    vim.notify("reader.nvim: No bookmarks", vim.log.levels.INFO)
+    return
+  end
+
+  local items = {}
+  for i, mark in ipairs(marks) do
+    local prefix = ""
+    if mark.chapter and state.chapters then
+      local ch = state.chapters[mark.chapter]
+      if ch then
+        prefix = string.format("[%s] ", ch.title)
+      end
+    end
+    items[i] = string.format("%s%s (line %d)", prefix, mark.label, mark.line)
+  end
+
+  vim.ui.select(items, { prompt = "Bookmarks:" }, function(_, idx)
+    if not idx then
+      return
+    end
+    vim.schedule(function()
+      goto_mark(state, marks[idx])
+    end)
+  end)
+end
+
 return M

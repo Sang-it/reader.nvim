@@ -39,17 +39,13 @@ local function update_cursor_visibility()
   end
 end
 
+--- Set up shared keymaps (quit, chapters, bookmarks)
 ---@param buf number
 ---@param state ReaderState
-function M.attach(buf, state)
+local function attach_shared(buf, state)
   local cfg = require("reader.config").get()
   local opts = { buffer = buf, noremap = true, silent = true }
-
-  -- Store original guicursor for cursor hide/restore
-  local s = require("reader.buffer")._saved[buf]
-  if s and s.opts.guicursor then
-    saved_guicursor = s.opts.guicursor
-  end
+  local nav = require("reader.navigate")
 
   vim.keymap.set("n", cfg.keys.quit, function()
     require("reader").close()
@@ -58,20 +54,59 @@ function M.attach(buf, state)
   if state.chapters then
     if cfg.keys.next_chapter then
       vim.keymap.set("n", cfg.keys.next_chapter, function()
-        require("reader.navigate").next_chapter(state)
+        nav.next_chapter(state)
       end, opts)
     end
     if cfg.keys.prev_chapter then
       vim.keymap.set("n", cfg.keys.prev_chapter, function()
-        require("reader.navigate").prev_chapter(state)
+        nav.prev_chapter(state)
       end, opts)
     end
     if cfg.keys.toc then
       vim.keymap.set("n", cfg.keys.toc, function()
-        require("reader.navigate").show_toc(state)
+        nav.show_toc(state)
       end, opts)
     end
   end
+
+  -- Bookmark keymaps
+  if cfg.keys.add_mark then
+    vim.keymap.set("n", cfg.keys.add_mark, function()
+      nav.add_mark(state)
+    end, opts)
+  end
+  if cfg.keys.remove_mark then
+    vim.keymap.set("n", cfg.keys.remove_mark, function()
+      nav.remove_mark(state)
+    end, opts)
+  end
+  if cfg.keys.next_mark then
+    vim.keymap.set("n", cfg.keys.next_mark, function()
+      nav.next_mark(state)
+    end, opts)
+  end
+  if cfg.keys.prev_mark then
+    vim.keymap.set("n", cfg.keys.prev_mark, function()
+      nav.prev_mark(state)
+    end, opts)
+  end
+  if cfg.keys.list_marks then
+    vim.keymap.set("n", cfg.keys.list_marks, function()
+      nav.show_marks(state)
+    end, opts)
+  end
+end
+
+---@param buf number
+---@param state ReaderState
+function M.attach(buf, state)
+  -- Store original guicursor for cursor hide/restore
+  local s = require("reader.buffer")._saved[buf]
+  if s and s.opts.guicursor then
+    saved_guicursor = s.opts.guicursor
+  end
+
+  attach_shared(buf, state)
 
   local group = vim.api.nvim_create_augroup("ReaderCursorTrack", { clear = true })
   vim.api.nvim_create_autocmd("CursorMoved", {
@@ -90,30 +125,7 @@ end
 ---@param buf number
 ---@param state ReaderState
 function M.attach_minimal(buf, state)
-  local cfg = require("reader.config").get()
-  local opts = { buffer = buf, noremap = true, silent = true }
-
-  vim.keymap.set("n", cfg.keys.quit, function()
-    require("reader").close()
-  end, opts)
-
-  if state.chapters then
-    if cfg.keys.next_chapter then
-      vim.keymap.set("n", cfg.keys.next_chapter, function()
-        require("reader.navigate").next_chapter(state)
-      end, opts)
-    end
-    if cfg.keys.prev_chapter then
-      vim.keymap.set("n", cfg.keys.prev_chapter, function()
-        require("reader.navigate").prev_chapter(state)
-      end, opts)
-    end
-    if cfg.keys.toc then
-      vim.keymap.set("n", cfg.keys.toc, function()
-        require("reader.navigate").show_toc(state)
-      end, opts)
-    end
-  end
+  attach_shared(buf, state)
 end
 
 function M.detach_minimal(state)

@@ -173,17 +173,7 @@ function M.add_mark(state)
   local line = vim.api.nvim_win_get_cursor(win)[1]
   local chapter = state.chapters and state.current_chapter or nil
 
-  -- Build a default label from the line content
-  local buf_line = vim.api.nvim_buf_get_lines(state.buf, line - 1, line, false)[1] or ""
-  local label = buf_line:match("^%s*(.-)%s*$") or ""
-  if #label > 60 then
-    label = label:sub(1, 57) .. "..."
-  end
-  if label == "" then
-    label = "Line " .. line
-  end
-
-  vim.ui.input({ prompt = "Bookmark label: ", default = label }, function(input)
+  vim.ui.input({ prompt = "Bookmark label: " }, function(input)
     if not input or input == "" then
       return
     end

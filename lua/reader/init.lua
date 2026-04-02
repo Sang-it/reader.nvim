@@ -35,7 +35,7 @@ function M.open(filepath)
   local cfg = config.get()
   local zen = cfg.zen_mode
 
-  if zen then
+  if zen and cfg.focus_paragraph then
     highlight.setup_highlights()
   end
 
@@ -84,11 +84,15 @@ function M.open(filepath)
       vim.api.nvim_win_set_cursor(win, { line, 0 })
       local index = navigate.find_current(state.paragraphs, line - 1)
       state.current_index = index
-      highlight.focus_paragraph(buf, state.paragraphs[index].start, state.paragraphs[index].end_)
+      if cfg.focus_paragraph then
+        highlight.focus_paragraph(buf, state.paragraphs[index].start, state.paragraphs[index].end_)
+      end
     else
       state.current_index = 1
       local para = state.paragraphs[1]
-      highlight.focus_paragraph(buf, para.start, para.end_)
+      if cfg.focus_paragraph then
+        highlight.focus_paragraph(buf, para.start, para.end_)
+      end
       vim.api.nvim_win_set_cursor(win, { para.start + 1, 0 })
     end
 

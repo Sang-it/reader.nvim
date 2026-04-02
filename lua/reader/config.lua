@@ -5,6 +5,8 @@ M.defaults = {
   width = 80,
   -- Open in zen mode (centered floating window) or standard window
   zen_mode = true,
+  -- Highlight current paragraph and dim the rest in zen mode
+  focus_paragraph = true,
   -- Center the focused paragraph in the viewport
   center_focus = true,
   -- Hide cursor on whitespace: "whitespace" (only on blank chars), "always", or false

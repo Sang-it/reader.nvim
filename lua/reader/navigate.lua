@@ -60,8 +60,11 @@ function M.update_focus(state)
   state.current_index = index
   local para = state.paragraphs[index]
   if para then
-    highlight.focus_paragraph(state.buf, para.start, para.end_)
-    if require("reader.config").get().center_focus then
+    local cfg = require("reader.config").get()
+    if cfg.focus_paragraph then
+      highlight.focus_paragraph(state.buf, para.start, para.end_)
+    end
+    if cfg.center_focus then
       vim.cmd("normal! zz")
     end
   end
@@ -98,7 +101,9 @@ function M.load_chapter(state, chapter_index)
     local win = vim.api.nvim_get_current_win()
     vim.api.nvim_win_set_cursor(win, { para.start + 1, 0 })
     if cfg.zen_mode then
-      highlight.focus_paragraph(state.buf, para.start, para.end_)
+      if cfg.focus_paragraph then
+        highlight.focus_paragraph(state.buf, para.start, para.end_)
+      end
       if cfg.center_focus then
         vim.cmd("normal! zz")
       end
@@ -251,9 +256,11 @@ local function goto_mark(state, mark)
   if cfg.zen_mode then
     local index = M.find_current(state.paragraphs, line - 1)
     state.current_index = index
-    local para = state.paragraphs[index]
-    if para then
-      highlight.focus_paragraph(state.buf, para.start, para.end_)
+    if cfg.focus_paragraph then
+      local para = state.paragraphs[index]
+      if para then
+        highlight.focus_paragraph(state.buf, para.start, para.end_)
+      end
     end
     if cfg.center_focus then
       vim.cmd("normal! zz")

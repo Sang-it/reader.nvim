@@ -114,6 +114,9 @@ require("reader").setup({
   -- Zen mode: centered floating window (true) or standard window (false)
   zen_mode = true,
 
+  -- Highlight current paragraph and dim the rest in zen mode
+  focus_paragraph = true,
+
   -- Center the focused paragraph in the viewport
   center_focus = true,
 

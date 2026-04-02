@@ -22,12 +22,11 @@ function M.render(state)
     return
   end
 
-  local current_chapter = state.chapters and state.current_chapter or nil
+  local current_chapter = state.chapters and state.current_chapter
   local line_count = vim.api.nvim_buf_line_count(state.buf)
 
   for _, note in ipairs(all_notes) do
-    local note_ch = note.chapter or nil
-    if note_ch == current_chapter then
+    if note.chapter == current_chapter then
       local el = note.line - 1 -- 0-indexed
       local ec = note.col or 0
       local sl = (note.start_line or note.line) - 1
@@ -65,22 +64,13 @@ function M.clear(buf)
   end
 end
 
---- Blend two RGB colors
-local function blend(fg, bg, alpha)
-  local r1, g1, b1 = math.floor(fg / 65536), math.floor(fg / 256) % 256, fg % 256
-  local r2, g2, b2 = math.floor(bg / 65536), math.floor(bg / 256) % 256, bg % 256
-  local r = math.floor(r1 * alpha + r2 * (1 - alpha))
-  local g = math.floor(g1 * alpha + g2 * (1 - alpha))
-  local b = math.floor(b1 * alpha + b2 * (1 - alpha))
-  return r * 65536 + g * 256 + b
-end
-
 --- Set up the highlight groups for notes
 function M.setup_highlights()
+  local util = require("reader.util")
   local normal = vim.api.nvim_get_hl(0, { name = "Normal", link = false })
   local bg = normal.bg or 0x1e1e1e
   local note_fg = vim.api.nvim_get_hl(0, { name = "DiagnosticInfo", link = false }).fg or 0x6fb3d2
-  local dimmed = blend(note_fg, bg, 0.4)
+  local dimmed = util.blend(note_fg, bg, 0.4)
   vim.api.nvim_set_hl(0, "ReaderNote", { fg = dimmed, italic = true })
   vim.api.nvim_set_hl(0, "ReaderNoteText", { underline = true, sp = dimmed })
   vim.api.nvim_set_hl(0, "ReaderNoteArrow", { fg = dimmed })
@@ -117,7 +107,7 @@ function M.add_note(state)
     sc, ec = ec, sc
   end
 
-  local chapter = state.chapters and state.current_chapter or nil
+  local chapter = state.chapters and state.current_chapter
 
   -- Exit visual mode
   vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Esc>", true, false, true), "nx", false)
@@ -178,7 +168,7 @@ function M.next_note(state)
     return
   end
 
-  local chapter = state.chapters and state.current_chapter or nil
+  local chapter = state.chapters and state.current_chapter
   local win = vim.api.nvim_get_current_win()
   local line = vim.api.nvim_win_get_cursor(win)[1]
   local ch = chapter or 0
@@ -212,7 +202,7 @@ function M.prev_note(state)
     return
   end
 
-  local chapter = state.chapters and state.current_chapter or nil
+  local chapter = state.chapters and state.current_chapter
   local win = vim.api.nvim_get_current_win()
   local line = vim.api.nvim_win_get_cursor(win)[1]
   local ch = chapter or 0

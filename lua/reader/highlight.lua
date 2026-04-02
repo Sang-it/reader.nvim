@@ -1,34 +1,14 @@
+local util = require("reader.util")
+
 local M = {}
 
 local ns = vim.api.nvim_create_namespace("reader_nvim")
 
---- Blend two RGB colors
----@param fg number
----@param bg number
----@param alpha number 0..1 (0=all bg, 1=all fg)
----@return number
-local function blend(fg, bg, alpha)
-  local r1, g1, b1 = math.floor(fg / 65536), math.floor(fg / 256) % 256, fg % 256
-  local r2, g2, b2 = math.floor(bg / 65536), math.floor(bg / 256) % 256, bg % 256
-  local r = math.floor(r1 * alpha + r2 * (1 - alpha))
-  local g = math.floor(g1 * alpha + g2 * (1 - alpha))
-  local b = math.floor(b1 * alpha + b2 * (1 - alpha))
-  return r * 65536 + g * 256 + b
-end
-
-local function resolve_hl(name)
-  return vim.api.nvim_get_hl(0, { name = name, link = false })
-end
-
 function M.setup_highlights()
-  local config = require("reader.config").get()
-  local normal = resolve_hl("Normal")
+  local normal = vim.api.nvim_get_hl(0, { name = "Normal", link = false })
   local fg = normal.fg or 0xd4d4d4
   local bg = normal.bg or 0x1e1e1e
-
-  local dimmed_fg = blend(fg, bg, 0.35)
-
-  vim.api.nvim_set_hl(0, "ReaderDim", { fg = dimmed_fg })
+  vim.api.nvim_set_hl(0, "ReaderDim", { fg = util.blend(fg, bg, 0.35) })
 end
 
 --- Apply focus highlight: dim everything except the focused paragraph range

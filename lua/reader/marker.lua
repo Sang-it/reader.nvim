@@ -5,8 +5,6 @@ local hidden = false
 
 --- Set up the highlight group
 function M.setup_highlights()
-  local normal = vim.api.nvim_get_hl(0, { name = "Normal", link = false })
-  local bg = normal.bg or 0x1e1e1e
   local hl_bg = vim.api.nvim_get_hl(0, { name = "Visual", link = false }).bg or 0x264f78
   vim.api.nvim_set_hl(0, "ReaderMarker", { bg = hl_bg })
 end
@@ -30,33 +28,21 @@ function M.render(state)
     return
   end
 
-  local current_chapter = state.chapters and state.current_chapter or nil
+  local current_chapter = state.chapters and state.current_chapter
   local line_count = vim.api.nvim_buf_line_count(state.buf)
 
   for _, hl in ipairs(all_hl) do
-    local hl_ch = hl.chapter or nil
-    if hl_ch == current_chapter then
+    if hl.chapter == current_chapter then
       local sl = hl.start_line - 1 -- 0-indexed
       local el = hl.end_line - 1
       if sl >= 0 and sl < line_count then
         el = math.min(el, line_count - 1)
-        if sl == el then
-          -- Single line highlight
-          vim.api.nvim_buf_set_extmark(state.buf, ns, sl, hl.start_col, {
-            end_row = el,
-            end_col = hl.end_col,
-            hl_group = "ReaderMarker",
-            priority = 150,
-          })
-        else
-          -- Multi-line highlight
-          vim.api.nvim_buf_set_extmark(state.buf, ns, sl, hl.start_col, {
-            end_row = el,
-            end_col = hl.end_col,
-            hl_group = "ReaderMarker",
-            priority = 150,
-          })
-        end
+        vim.api.nvim_buf_set_extmark(state.buf, ns, sl, hl.start_col, {
+          end_row = el,
+          end_col = hl.end_col,
+          hl_group = "ReaderMarker",
+          priority = 150,
+        })
       end
     end
   end
@@ -119,7 +105,7 @@ function M.add_highlight(state)
     text = text:sub(1, 57) .. "..."
   end
 
-  local chapter = state.chapters and state.current_chapter or nil
+  local chapter = state.chapters and state.current_chapter
 
   -- Exit visual mode
   vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Esc>", true, false, true), "nx", false)
@@ -173,7 +159,7 @@ function M.next_highlight(state)
     return
   end
 
-  local chapter = state.chapters and state.current_chapter or nil
+  local chapter = state.chapters and state.current_chapter
   local win = vim.api.nvim_get_current_win()
   local line = vim.api.nvim_win_get_cursor(win)[1]
   local ch = chapter or 0
@@ -205,7 +191,7 @@ function M.prev_highlight(state)
     return
   end
 
-  local chapter = state.chapters and state.current_chapter or nil
+  local chapter = state.chapters and state.current_chapter
   local win = vim.api.nvim_get_current_win()
   local line = vim.api.nvim_win_get_cursor(win)[1]
   local ch = chapter or 0

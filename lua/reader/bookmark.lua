@@ -121,15 +121,7 @@ function M.add_mark(filepath, chapter, line, label)
     bm[key].marks = {}
   end
   table.insert(bm[key].marks, { chapter = chapter, line = line, label = label })
-  -- Sort marks by chapter then line
-  table.sort(bm[key].marks, function(a, b)
-    local ac = a.chapter or 0
-    local bc = b.chapter or 0
-    if ac ~= bc then
-      return ac < bc
-    end
-    return a.line < b.line
-  end)
+  sort_by_position(bm[key].marks, "line")
   save()
 end
 
@@ -161,16 +153,24 @@ function M.get_marks(filepath)
   return bm[key].marks
 end
 
---- Sort notes by chapter then line
----@param notes table[]
-local function sort_notes(notes)
-  table.sort(notes, function(a, b)
+--- Sort entries by chapter then position
+---@param entries table[]
+---@param line_key string field name for the line to sort by
+---@param col_key string|nil optional field name for column tiebreak
+local function sort_by_position(entries, line_key, col_key)
+  table.sort(entries, function(a, b)
     local ac = a.chapter or 0
     local bc = b.chapter or 0
     if ac ~= bc then
       return ac < bc
     end
-    return a.line < b.line
+    if a[line_key] ~= b[line_key] then
+      return a[line_key] < b[line_key]
+    end
+    if col_key then
+      return (a[col_key] or 0) < (b[col_key] or 0)
+    end
+    return false
   end)
 end
 
@@ -199,7 +199,7 @@ function M.add_note(filepath, chapter, start_line, start_col, end_line, end_col,
     start_col = start_col,
     text = text,
   })
-  sort_notes(bm[key].notes)
+  sort_by_position(bm[key].notes, "line")
   save()
 end
 
@@ -231,21 +231,6 @@ function M.get_notes(filepath)
   return bm[key].notes
 end
 
---- Sort highlights by chapter then line/col
----@param highlights table[]
-local function sort_highlights(highlights)
-  table.sort(highlights, function(a, b)
-    local ac = a.chapter or 0
-    local bc = b.chapter or 0
-    if ac ~= bc then
-      return ac < bc
-    end
-    if a.start_line ~= b.start_line then
-      return a.start_line < b.start_line
-    end
-    return a.start_col < b.start_col
-  end)
-end
 
 --- Add a text highlight for a file
 ---@param filepath string
@@ -272,7 +257,7 @@ function M.add_highlight(filepath, chapter, start_line, start_col, end_line, end
     end_col = end_col,
     text = text,
   })
-  sort_highlights(bm[key].highlights)
+  sort_by_position(bm[key].highlights, "start_line", "start_col")
   save()
 end
 

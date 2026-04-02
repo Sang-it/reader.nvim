@@ -102,6 +102,7 @@ All standard vim motions work (`j`, `k`, `gg`, `G`, `Ctrl-d`, `Ctrl-u`, `/`, etc
 | `]s` | Jump to next highlight |
 | `[s` | Jump to previous highlight |
 | `S` | Show highlights picker |
+| `gs` | Toggle highlights visibility |
 
 ## Configuration
 
@@ -121,6 +122,9 @@ require("reader").setup({
 
   -- Show notes ghost text on open (toggle with gn)
   show_notes = true,
+
+  -- Show text highlights on open (toggle with gs)
+  show_highlights = true,
 
   -- Keybindings (set any to false to disable)
   keys = {
@@ -144,6 +148,7 @@ require("reader").setup({
     next_highlight = "]s",
     prev_highlight = "[s",
     list_highlights = "S",
+    toggle_highlights = "gs",
   },
 })
 ```

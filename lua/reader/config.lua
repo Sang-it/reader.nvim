@@ -40,6 +40,7 @@ M.defaults = {
     prev_highlight = "[s",
     list_highlights = "S",
     toggle_highlights = "gs",
+    dict_lookup = "gd",
   },
 }
 

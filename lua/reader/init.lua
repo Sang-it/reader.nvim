@@ -8,6 +8,7 @@ local filetype = require("reader.filetype")
 local bookmark = require("reader.bookmark")
 local notes = require("reader.notes")
 local marker = require("reader.marker")
+local dict = require("reader.dict")
 
 local M = {}
 
@@ -121,6 +122,7 @@ function M.open(filepath)
   marker.setup_highlights()
   marker.init()
   marker.render(state)
+  dict.setup_highlights()
 
   -- Show chapter info for epub (auto-clears after 2s)
   if state.chapters and #state.chapters > 0 then

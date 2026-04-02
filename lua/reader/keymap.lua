@@ -161,6 +161,14 @@ local function attach_shared(buf, state)
       marker.toggle(state)
     end, opts)
   end
+
+  -- Dictionary lookup
+  local dict = require("reader.dict")
+  if cfg.keys.dict_lookup then
+    vim.keymap.set("v", cfg.keys.dict_lookup, function()
+      dict.lookup(state)
+    end, opts)
+  end
 end
 
 ---@param buf number
@@ -181,6 +189,7 @@ function M.attach(buf, state)
     callback = function()
       require("reader.navigate").update_focus(state)
       update_cursor_visibility()
+      require("reader.dict").on_cursor_moved()
     end,
   })
 
@@ -192,10 +201,24 @@ end
 ---@param state ReaderState
 function M.attach_minimal(buf, state)
   attach_shared(buf, state)
+
+  local group = vim.api.nvim_create_augroup("ReaderDictTrack", { clear = true })
+  vim.api.nvim_create_autocmd("CursorMoved", {
+    buffer = buf,
+    group = group,
+    callback = function()
+      require("reader.dict").on_cursor_moved()
+    end,
+  })
+  state._dict_augroup = group
 end
 
 function M.detach_minimal(state)
-  -- No augroup or cursor state to clean up
+  if state._dict_augroup then
+    vim.api.nvim_del_augroup_by_id(state._dict_augroup)
+    state._dict_augroup = nil
+  end
+  require("reader.dict").clear()
 end
 
 function M.detach(state)
@@ -203,6 +226,7 @@ function M.detach(state)
     vim.api.nvim_del_augroup_by_id(state._augroup)
     state._augroup = nil
   end
+  require("reader.dict").clear()
   show_cursor()
   if saved_guicursor then
     vim.cmd.redrawstatus()

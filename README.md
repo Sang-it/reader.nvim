@@ -17,6 +17,8 @@ A distraction-free ebook reader for Neovim. Highlights the current paragraph and
 - Text highlighting with visual selection
 - Remembers your reading position per file (chapter + line)
 - EPUB parsing is cached for fast reopening
+- Dictionary lookup with inline definitions (visual select + `gd`)
+- Auto-open reader for configured filetypes
 - Normal vim motions for navigation
 
 ## Requirements
@@ -103,6 +105,7 @@ All standard vim motions work (`j`, `k`, `gg`, `G`, `Ctrl-d`, `Ctrl-u`, `/`, etc
 | `[s` | Jump to previous highlight |
 | `S` | Show highlights picker |
 | `gs` | Toggle highlights visibility |
+| `gd` | Dictionary lookup (visual mode) |
 
 ## Configuration
 
@@ -129,6 +132,9 @@ require("reader").setup({
   -- Show text highlights on open (toggle with gs)
   show_highlights = true,
 
+  -- Auto-open reader for these filetypes on BufEnter
+  auto_open = {}, -- e.g. {"md", "txt", "epub"}
+
   -- Keybindings (set any to false to disable)
   keys = {
     quit = "q",
@@ -152,6 +158,7 @@ require("reader").setup({
     prev_highlight = "[s",
     list_highlights = "S",
     toggle_highlights = "gs",
+    dict_lookup = "gd",
   },
 })
 ```

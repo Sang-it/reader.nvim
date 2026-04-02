@@ -9,6 +9,8 @@ M.defaults = {
   center_focus = true,
   -- Hide cursor on whitespace: "whitespace" (only on blank chars), "always", or false
   hide_cursor = "whitespace",
+  -- Show notes ghost text on open
+  show_notes = true,
   -- Keybindings (set to false to disable)
   keys = {
     quit = "q",
@@ -25,6 +27,7 @@ M.defaults = {
     next_note = "]n",
     prev_note = "[n",
     list_notes = "N",
+    toggle_notes = "gn",
   },
 }
 

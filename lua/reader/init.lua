@@ -107,6 +107,7 @@ function M.open(filepath)
 
   -- Render notes as ghost text
   notes.setup_highlights()
+  notes.init()
   notes.render(state)
 
   -- Show chapter info for epub (auto-clears after 2s)

@@ -1,11 +1,17 @@
 local M = {}
 
 local ns = vim.api.nvim_create_namespace("reader_notes")
+local hidden = false
 
 --- Render notes as ghost text for the current chapter/buffer
 ---@param state ReaderState
 function M.render(state)
   if not vim.api.nvim_buf_is_valid(state.buf) then
+    return
+  end
+
+  if hidden then
+    vim.api.nvim_buf_clear_namespace(state.buf, ns, 0, -1)
     return
   end
 
@@ -50,6 +56,20 @@ function M.setup_highlights()
   -- A muted accent color for notes
   local note_fg = vim.api.nvim_get_hl(0, { name = "DiagnosticInfo", link = false }).fg or 0x6fb3d2
   vim.api.nvim_set_hl(0, "ReaderNote", { fg = note_fg, italic = true })
+end
+
+--- Initialize hidden state from config
+function M.init()
+  local cfg = require("reader.config").get()
+  hidden = not cfg.show_notes
+end
+
+--- Toggle note visibility
+---@param state ReaderState
+function M.toggle(state)
+  hidden = not hidden
+  M.render(state)
+  vim.notify("reader.nvim: Notes " .. (hidden and "hidden" or "visible"), vim.log.levels.INFO)
 end
 
 --- Add a note at the current cursor position

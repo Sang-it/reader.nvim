@@ -91,6 +91,7 @@ All standard vim motions work (`j`, `k`, `gg`, `G`, `Ctrl-d`, `Ctrl-u`, `/`, etc
 | `]n` | Jump to next note |
 | `[n` | Jump to previous note |
 | `N` | Show notes picker |
+| `gn` | Toggle notes visibility |
 
 ## Configuration
 
@@ -108,6 +109,9 @@ require("reader").setup({
   -- Cursor hiding: "whitespace" (hide on blank lines), "always", or false
   hide_cursor = "whitespace",
 
+  -- Show notes ghost text on open (toggle with gn)
+  show_notes = true,
+
   -- Keybindings (set any to false to disable)
   keys = {
     quit = "q",
@@ -124,6 +128,7 @@ require("reader").setup({
     next_note = "]n",
     prev_note = "[n",
     list_notes = "N",
+    toggle_notes = "gn",
   },
 })
 ```

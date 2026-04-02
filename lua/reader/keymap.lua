@@ -123,6 +123,11 @@ local function attach_shared(buf, state)
       notes.show_notes(state)
     end, opts)
   end
+  if cfg.keys.toggle_notes then
+    vim.keymap.set("n", cfg.keys.toggle_notes, function()
+      notes.toggle(state)
+    end, opts)
+  end
 end
 
 ---@param buf number

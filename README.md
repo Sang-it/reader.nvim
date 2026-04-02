@@ -31,7 +31,7 @@ A distraction-free ebook reader for Neovim. Highlights the current paragraph and
 
 ```lua
 {
-  "sangitmanandhar/reader.nvim",
+  "Sang-it/reader.nvim",
   cmd = "Reader",
   opts = {},
 }
@@ -41,7 +41,7 @@ A distraction-free ebook reader for Neovim. Highlights the current paragraph and
 
 ```lua
 use {
-  "sangitmanandhar/reader.nvim",
+  "Sang-it/reader.nvim",
   config = function()
     require("reader").setup()
   end,

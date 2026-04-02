@@ -17,6 +17,8 @@ M.defaults = {
   show_notes = true,
   -- Show text highlights on open
   show_highlights = true,
+  -- Auto-open reader for these filetypes on BufEnter (e.g. {"md", "txt", "epub"})
+  auto_open = {},
   -- Keybindings (set to false to disable)
   keys = {
     quit = "q",

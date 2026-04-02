@@ -17,6 +17,30 @@ M._state = nil
 
 function M.setup(opts)
   config.setup(opts)
+
+  local cfg = config.get()
+  if cfg.auto_open and #cfg.auto_open > 0 then
+    local patterns = {}
+    for _, ext in ipairs(cfg.auto_open) do
+      patterns[#patterns + 1] = "*." .. ext
+    end
+    vim.api.nvim_create_autocmd("BufEnter", {
+      group = vim.api.nvim_create_augroup("ReaderAutoOpen", { clear = true }),
+      pattern = patterns,
+      callback = function(ev)
+        if M._state then
+          return
+        end
+        local bufname = ev.file or ""
+        if bufname == "" then
+          return
+        end
+        vim.schedule(function()
+          M.open(bufname)
+        end)
+      end,
+    })
+  end
 end
 
 function M.open(filepath)

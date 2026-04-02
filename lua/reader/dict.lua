@@ -40,7 +40,7 @@ local function parse_definition(data)
   for _, line in ipairs(data) do
     line = line:gsub("\r", "")
     if line:match("^552 ") then
-      return "No definition found"
+      return { "No definition found" }
     elseif line:match("^151 ") then
       in_def = true
       seen_def = true
@@ -64,20 +64,28 @@ local function parse_definition(data)
   end
 
   if #lines == 0 then
-    return "No definition found"
+    return { "No definition found" }
   end
 
-  -- Join into single line, take first meaningful definition
-  local result = table.concat(lines, " ")
-  -- Clean up dict markup
-  result = result:gsub("%{(.-)%}", "%1")
-  result = result:gsub("%[.-%]", "")
-  result = result:gsub("\\(.-)\\", "%1")
-  result = result:gsub("%s+", " ")
-  result = result:match("^%s*(.-)%s*$")
+  -- Clean up dict markup per line
+  local result = {}
+  for _, l in ipairs(lines) do
+    l = l:gsub("%{(.-)%}", "%1")
+    l = l:gsub("%[.-%]", "")
+    l = l:gsub("\\(.-)\\", "%1")
+    l = l:gsub("%s+", " ")
+    l = l:match("^%s*(.-)%s*$")
+    if #l > 0 then
+      result[#result + 1] = l
+    end
+  end
 
-  if #result > 120 then
-    result = result:sub(1, 117) .. "..."
+  -- Limit to 8 lines
+  if #result > 8 then
+    local trimmed = {}
+    for i = 1, 8 do trimmed[i] = result[i] end
+    trimmed[9] = "..."
+    return trimmed
   end
 
   return result
@@ -127,13 +135,9 @@ function M.lookup(state)
   })
 
   -- Show loading
-  vim.api.nvim_buf_set_extmark(state.buf, ns, sl - 1, ec, {
-    virt_text = {
-      { " <- ", "ReaderDictArrow" },
-      { "[ looking up... ]", "ReaderDict" },
-    },
-    virt_text_pos = "inline",
-    id = 9999,
+  vim.api.nvim_buf_set_extmark(state.buf, ns, sl - 1, 0, {
+    virt_lines = { { { "  looking up...", "ReaderDict" } } },
+    virt_lines_above = false,
   })
 
   -- Async dict lookup
@@ -149,9 +153,9 @@ function M.lookup(state)
           return
         end
 
-        local definition = parse_definition(data)
+        local def_lines = parse_definition(data)
 
-        -- Clear and re-render: underline + inline definition
+        -- Clear and re-render: underline + virtual lines
         vim.api.nvim_buf_clear_namespace(state.buf, ns, 0, -1)
 
         vim.api.nvim_buf_set_extmark(state.buf, ns, sl - 1, sc, {
@@ -161,14 +165,40 @@ function M.lookup(state)
           priority = 170,
         })
 
-        vim.api.nvim_buf_set_extmark(state.buf, ns, sl - 1, ec, {
-          virt_text = {
-            { " <- ", "ReaderDictArrow" },
-            { "[ " .. definition .. " ]", "ReaderDict" },
-          },
-          virt_text_pos = "inline",
+        local virt_lines = {}
+        virt_lines[#virt_lines + 1] = { { "  ── " .. word .. " ──", "ReaderDict" } }
+        for _, def_line in ipairs(def_lines) do
+          virt_lines[#virt_lines + 1] = { { "  " .. def_line, "ReaderDict" } }
+        end
+
+        vim.api.nvim_buf_set_extmark(state.buf, ns, sl - 1, 0, {
+          virt_lines = virt_lines,
+          virt_lines_above = false,
         })
       end)
+    end,
+    on_exit = function(_, code)
+      if code ~= 0 then
+        vim.schedule(function()
+          if active_buf ~= state.buf or active_line ~= sl then
+            return
+          end
+          if not vim.api.nvim_buf_is_valid(state.buf) then
+            return
+          end
+          vim.api.nvim_buf_clear_namespace(state.buf, ns, 0, -1)
+          vim.api.nvim_buf_set_extmark(state.buf, ns, sl - 1, sc, {
+            end_row = sl - 1,
+            end_col = ec,
+            hl_group = "ReaderDictWord",
+            priority = 170,
+          })
+          vim.api.nvim_buf_set_extmark(state.buf, ns, sl - 1, 0, {
+            virt_lines = { { { "  Dictionary lookup failed", "ReaderDict" } } },
+            virt_lines_above = false,
+          })
+        end)
+      end
     end,
   })
 end

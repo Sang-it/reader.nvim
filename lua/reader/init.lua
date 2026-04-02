@@ -30,7 +30,12 @@ function M.open(filepath)
     M.close()
   end
 
-  highlight.setup_highlights()
+  local cfg = config.get()
+  local zen = cfg.zen_mode
+
+  if zen then
+    highlight.setup_highlights()
+  end
 
   local ok, content = pcall(filetype.load, filepath)
   if not ok then
@@ -67,24 +72,36 @@ function M.open(filepath)
 
   local win = buffer.setup_reader_mode(buf)
   vim.api.nvim_buf_set_name(buf, "reader://" .. (content.title or filepath))
-  keymap.attach(buf, state)
 
-  -- Restore saved cursor position or start at first paragraph
-  if saved_pos and saved_pos.line then
-    local line = math.min(saved_pos.line, vim.api.nvim_buf_line_count(buf))
-    vim.api.nvim_win_set_cursor(win, { line, 0 })
-    local index = navigate.find_current(state.paragraphs, line - 1)
-    state.current_index = index
-    highlight.focus_paragraph(buf, state.paragraphs[index].start, state.paragraphs[index].end_)
+  if zen then
+    keymap.attach(buf, state)
+
+    -- Restore saved cursor position or start at first paragraph
+    if saved_pos and saved_pos.line then
+      local line = math.min(saved_pos.line, vim.api.nvim_buf_line_count(buf))
+      vim.api.nvim_win_set_cursor(win, { line, 0 })
+      local index = navigate.find_current(state.paragraphs, line - 1)
+      state.current_index = index
+      highlight.focus_paragraph(buf, state.paragraphs[index].start, state.paragraphs[index].end_)
+    else
+      state.current_index = 1
+      local para = state.paragraphs[1]
+      highlight.focus_paragraph(buf, para.start, para.end_)
+      vim.api.nvim_win_set_cursor(win, { para.start + 1, 0 })
+    end
+
+    if cfg.center_focus then
+      vim.cmd("normal! zz")
+    end
   else
-    state.current_index = 1
-    local para = state.paragraphs[1]
-    highlight.focus_paragraph(buf, para.start, para.end_)
-    vim.api.nvim_win_set_cursor(win, { para.start + 1, 0 })
-  end
+    -- Standard mode: just keybindings, no highlighting or cursor tricks
+    keymap.attach_minimal(buf, state)
 
-  if config.get().center_focus then
-    vim.cmd("normal! zz")
+    -- Restore saved cursor position
+    if saved_pos and saved_pos.line then
+      local line = math.min(saved_pos.line, vim.api.nvim_buf_line_count(buf))
+      vim.api.nvim_win_set_cursor(win, { line, 0 })
+    end
   end
 
   -- Show chapter info for epub (auto-clears after 2s)
@@ -114,8 +131,12 @@ function M.close()
     line
   )
 
-  highlight.clear(M._state.buf)
-  keymap.detach(M._state)
+  if config.get().zen_mode then
+    highlight.clear(M._state.buf)
+    keymap.detach(M._state)
+  else
+    keymap.detach_minimal(M._state)
+  end
   buffer.teardown(M._state.buf)
 
   if vim.api.nvim_buf_is_valid(M._state.buf) then

@@ -87,6 +87,39 @@ function M.attach(buf, state)
   state._augroup = group
 end
 
+---@param buf number
+---@param state ReaderState
+function M.attach_minimal(buf, state)
+  local cfg = require("reader.config").get()
+  local opts = { buffer = buf, noremap = true, silent = true }
+
+  vim.keymap.set("n", cfg.keys.quit, function()
+    require("reader").close()
+  end, opts)
+
+  if state.chapters then
+    if cfg.keys.next_chapter then
+      vim.keymap.set("n", cfg.keys.next_chapter, function()
+        require("reader.navigate").next_chapter(state)
+      end, opts)
+    end
+    if cfg.keys.prev_chapter then
+      vim.keymap.set("n", cfg.keys.prev_chapter, function()
+        require("reader.navigate").prev_chapter(state)
+      end, opts)
+    end
+    if cfg.keys.toc then
+      vim.keymap.set("n", cfg.keys.toc, function()
+        require("reader.navigate").show_toc(state)
+      end, opts)
+    end
+  end
+end
+
+function M.detach_minimal(state)
+  -- No augroup or cursor state to clean up
+end
+
 function M.detach(state)
   if state._augroup then
     vim.api.nvim_del_augroup_by_id(state._augroup)

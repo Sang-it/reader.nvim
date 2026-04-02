@@ -77,6 +77,9 @@ require("reader").setup({
   -- Reading pane width in columns
   width = 80,
 
+  -- Zen mode: centered floating window (true) or standard window (false)
+  zen_mode = true,
+
   -- Center the focused paragraph in the viewport
   center_focus = true,
 

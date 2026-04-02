@@ -18,6 +18,10 @@ function M.setup_reader_mode(buf)
   local cfg = config.get()
   local saved = {}
 
+  if not cfg.zen_mode then
+    return M._setup_standard_mode(buf, cfg, saved)
+  end
+
   -- Save and override global options
   saved.showmode = vim.o.showmode
   saved.laststatus = vim.o.laststatus
@@ -116,20 +120,46 @@ function M.setup_reader_mode(buf)
   return content_win
 end
 
+function M._setup_standard_mode(buf, cfg, saved)
+  -- Open the reader buffer in the current window — no special options
+  local prev_buf = vim.api.nvim_get_current_buf()
+  local win = vim.api.nvim_get_current_win()
+  vim.api.nvim_win_set_buf(win, buf)
+
+  M._saved[buf] = {
+    content_win = win,
+    prev_buf = prev_buf,
+    opts = saved,
+    zen_mode = false,
+  }
+
+  return win
+end
+
 function M.teardown(buf)
   local s = M._saved[buf]
   if not s then
     return
   end
 
-  if s.augroup then
-    vim.api.nvim_del_augroup_by_id(s.augroup)
-  end
-  if s.backdrop_win and vim.api.nvim_win_is_valid(s.backdrop_win) then
-    vim.api.nvim_win_close(s.backdrop_win, true)
-  end
-  if s.content_win and vim.api.nvim_win_is_valid(s.content_win) then
-    vim.api.nvim_win_close(s.content_win, true)
+  if s.zen_mode == false then
+    -- Standard mode: restore the previous buffer in the window
+    if s.prev_buf and vim.api.nvim_buf_is_valid(s.prev_buf) then
+      if s.content_win and vim.api.nvim_win_is_valid(s.content_win) then
+        vim.api.nvim_win_set_buf(s.content_win, s.prev_buf)
+      end
+    end
+  else
+    -- Zen mode: close floating windows
+    if s.augroup then
+      vim.api.nvim_del_augroup_by_id(s.augroup)
+    end
+    if s.backdrop_win and vim.api.nvim_win_is_valid(s.backdrop_win) then
+      vim.api.nvim_win_close(s.backdrop_win, true)
+    end
+    if s.content_win and vim.api.nvim_win_is_valid(s.content_win) then
+      vim.api.nvim_win_close(s.content_win, true)
+    end
   end
 
   -- Restore global options (guicursor handled by keymap.detach)

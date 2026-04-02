@@ -11,6 +11,8 @@ M.defaults = {
   hide_cursor = "whitespace",
   -- Show notes ghost text on open
   show_notes = true,
+  -- Show text highlights on open
+  show_highlights = true,
   -- Keybindings (set to false to disable)
   keys = {
     quit = "q",
@@ -33,6 +35,7 @@ M.defaults = {
     next_highlight = "]s",
     prev_highlight = "[s",
     list_highlights = "S",
+    toggle_highlights = "gs",
   },
 }
 

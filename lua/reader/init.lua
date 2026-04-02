@@ -111,6 +111,7 @@ function M.open(filepath)
   notes.init()
   notes.render(state)
   marker.setup_highlights()
+  marker.init()
   marker.render(state)
 
   -- Show chapter info for epub (auto-clears after 2s)

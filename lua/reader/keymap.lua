@@ -99,7 +99,7 @@ local function attach_shared(buf, state)
   -- Note keymaps
   local notes = require("reader.notes")
   if cfg.keys.add_note then
-    vim.keymap.set("n", cfg.keys.add_note, function()
+    vim.keymap.set("v", cfg.keys.add_note, function()
       notes.add_note(state)
     end, opts)
   end
@@ -154,6 +154,11 @@ local function attach_shared(buf, state)
   if cfg.keys.list_highlights then
     vim.keymap.set("n", cfg.keys.list_highlights, function()
       marker.show_highlights(state)
+    end, opts)
+  end
+  if cfg.keys.toggle_highlights then
+    vim.keymap.set("n", cfg.keys.toggle_highlights, function()
+      marker.toggle(state)
     end, opts)
   end
 end

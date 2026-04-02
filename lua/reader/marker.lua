@@ -1,6 +1,7 @@
 local M = {}
 
 local ns = vim.api.nvim_create_namespace("reader_marker")
+local hidden = false
 
 --- Set up the highlight group
 function M.setup_highlights()
@@ -18,6 +19,10 @@ function M.render(state)
   end
 
   vim.api.nvim_buf_clear_namespace(state.buf, ns, 0, -1)
+
+  if hidden then
+    return
+  end
 
   local bookmark = require("reader.bookmark")
   local all_hl = bookmark.get_highlights(state.filepath)
@@ -63,6 +68,20 @@ function M.clear(buf)
   if vim.api.nvim_buf_is_valid(buf) then
     vim.api.nvim_buf_clear_namespace(buf, ns, 0, -1)
   end
+end
+
+--- Initialize hidden state from config
+function M.init()
+  local cfg = require("reader.config").get()
+  hidden = not cfg.show_highlights
+end
+
+--- Toggle highlight visibility
+---@param state ReaderState
+function M.toggle(state)
+  hidden = not hidden
+  M.render(state)
+  vim.notify("reader.nvim: Highlights " .. (hidden and "hidden" or "visible"), vim.log.levels.INFO)
 end
 
 --- Add a highlight from visual selection

@@ -177,9 +177,12 @@ end
 --- Add a note for a file
 ---@param filepath string
 ---@param chapter number|nil
----@param line number 1-based cursor line
----@param text string
-function M.add_note(filepath, chapter, line, text)
+---@param start_line number 1-based
+---@param start_col number 0-based
+---@param end_line number 1-based
+---@param end_col number 0-based (exclusive)
+---@param text string the note text
+function M.add_note(filepath, chapter, start_line, start_col, end_line, end_col, text)
   local bm = load()
   local key = vim.fn.fnamemodify(filepath, ":p")
   if not bm[key] then
@@ -188,7 +191,14 @@ function M.add_note(filepath, chapter, line, text)
   if not bm[key].notes then
     bm[key].notes = {}
   end
-  table.insert(bm[key].notes, { chapter = chapter, line = line, text = text })
+  table.insert(bm[key].notes, {
+    chapter = chapter,
+    line = end_line,
+    col = end_col,
+    start_line = start_line,
+    start_col = start_col,
+    text = text,
+  })
   sort_notes(bm[key].notes)
   save()
 end

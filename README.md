@@ -13,7 +13,7 @@ A distraction-free ebook reader for Neovim. Highlights the current paragraph and
 - Zen-mode style centered floating window layout
 - Cursor auto-hides on blank lines between paragraphs
 - User bookmarks with navigation (`]b`/`[b`) and picker (`M`)
-- Notes displayed as ghost text below annotated lines
+- Inline notes as ghost text (select text, press `n`, type your note)
 - Text highlighting with visual selection
 - Remembers your reading position per file (chapter + line)
 - EPUB parsing is cached for fast reopening
@@ -91,7 +91,7 @@ All standard vim motions work (`j`, `k`, `gg`, `G`, `Ctrl-d`, `Ctrl-u`, `/`, etc
 | `]b` | Jump to next bookmark |
 | `[b` | Jump to previous bookmark |
 | `M` | Show bookmarks picker |
-| `n` | Add a note |
+| `n` | Add a note at selection (visual mode) |
 | `dn` | Remove a note |
 | `]n` | Jump to next note |
 | `[n` | Jump to previous note |

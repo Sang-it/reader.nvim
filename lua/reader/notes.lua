@@ -3,19 +3,18 @@ local M = {}
 local ns = vim.api.nvim_create_namespace("reader_notes")
 local hidden = false
 
---- Render notes as ghost text for the current chapter/buffer
+--- Render notes as inline ghost text
 ---@param state ReaderState
 function M.render(state)
   if not vim.api.nvim_buf_is_valid(state.buf) then
     return
   end
 
+  vim.api.nvim_buf_clear_namespace(state.buf, ns, 0, -1)
+
   if hidden then
-    vim.api.nvim_buf_clear_namespace(state.buf, ns, 0, -1)
     return
   end
-
-  vim.api.nvim_buf_clear_namespace(state.buf, ns, 0, -1)
 
   local bookmark = require("reader.bookmark")
   local all_notes = bookmark.get_notes(state.filepath)
@@ -28,13 +27,30 @@ function M.render(state)
 
   for _, note in ipairs(all_notes) do
     local note_ch = note.chapter or nil
-    -- Only render notes for the current chapter (or all if no chapters)
     if note_ch == current_chapter then
-      local line = note.line - 1 -- 0-indexed
-      if line >= 0 and line < line_count then
-        vim.api.nvim_buf_set_extmark(state.buf, ns, line, 0, {
-          virt_lines = { { { "  ~ " .. note.text, "ReaderNote" } } },
-          virt_lines_above = false,
+      local el = note.line - 1 -- 0-indexed
+      local ec = note.col or 0
+      local sl = (note.start_line or note.line) - 1
+      local sc = note.start_col or 0
+      if sl >= 0 and sl < line_count then
+        -- Highlight the source text the note is attached to
+        local end_row = math.min(el, line_count - 1)
+        local end_line_text = vim.api.nvim_buf_get_lines(state.buf, end_row, end_row + 1, false)[1] or ""
+        local end_col = math.min(ec, #end_line_text)
+        vim.api.nvim_buf_set_extmark(state.buf, ns, sl, sc, {
+          end_row = end_row,
+          end_col = end_col,
+          hl_group = "ReaderNoteText",
+          priority = 160,
+        })
+
+        -- Inline ghost text: arrow + boxed note after the selection end
+        vim.api.nvim_buf_set_extmark(state.buf, ns, end_row, end_col, {
+          virt_text = {
+            { " <- ", "ReaderNoteArrow" },
+            { "[ " .. note.text .. " ]", "ReaderNote" },
+          },
+          virt_text_pos = "inline",
         })
       end
     end
@@ -49,13 +65,25 @@ function M.clear(buf)
   end
 end
 
---- Set up the highlight group for notes
+--- Blend two RGB colors
+local function blend(fg, bg, alpha)
+  local r1, g1, b1 = math.floor(fg / 65536), math.floor(fg / 256) % 256, fg % 256
+  local r2, g2, b2 = math.floor(bg / 65536), math.floor(bg / 256) % 256, bg % 256
+  local r = math.floor(r1 * alpha + r2 * (1 - alpha))
+  local g = math.floor(g1 * alpha + g2 * (1 - alpha))
+  local b = math.floor(b1 * alpha + b2 * (1 - alpha))
+  return r * 65536 + g * 256 + b
+end
+
+--- Set up the highlight groups for notes
 function M.setup_highlights()
   local normal = vim.api.nvim_get_hl(0, { name = "Normal", link = false })
   local bg = normal.bg or 0x1e1e1e
-  -- A muted accent color for notes
   local note_fg = vim.api.nvim_get_hl(0, { name = "DiagnosticInfo", link = false }).fg or 0x6fb3d2
-  vim.api.nvim_set_hl(0, "ReaderNote", { fg = note_fg, italic = true })
+  local dimmed = blend(note_fg, bg, 0.4)
+  vim.api.nvim_set_hl(0, "ReaderNote", { fg = dimmed, italic = true })
+  vim.api.nvim_set_hl(0, "ReaderNoteText", { underline = true, sp = dimmed })
+  vim.api.nvim_set_hl(0, "ReaderNoteArrow", { fg = dimmed })
 end
 
 --- Initialize hidden state from config
@@ -72,20 +100,34 @@ function M.toggle(state)
   vim.notify("reader.nvim: Notes " .. (hidden and "hidden" or "visible"), vim.log.levels.INFO)
 end
 
---- Add a note at the current cursor position
+--- Add a note from visual selection
 ---@param state ReaderState
 function M.add_note(state)
   local bookmark = require("reader.bookmark")
-  local win = vim.api.nvim_get_current_win()
-  local line = vim.api.nvim_win_get_cursor(win)[1]
+
+  -- Get visual selection range
+  local sl = vim.fn.line("v")
+  local sc = vim.fn.col("v") - 1
+  local el = vim.fn.line(".")
+  local ec = vim.fn.col(".")
+
+  -- Normalize: ensure start is before end
+  if sl > el or (sl == el and sc > ec) then
+    sl, el = el, sl
+    sc, ec = ec, sc
+  end
+
   local chapter = state.chapters and state.current_chapter or nil
+
+  -- Exit visual mode
+  vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Esc>", true, false, true), "nx", false)
 
   vim.ui.input({ prompt = "Note: " }, function(input)
     if not input or input == "" then
       return
     end
     vim.schedule(function()
-      bookmark.add_note(state.filepath, chapter, line, input)
+      bookmark.add_note(state.filepath, chapter, sl, sc, el, ec, input)
       M.render(state)
       vim.notify("reader.nvim: Note added", vim.log.levels.INFO)
     end)
@@ -143,14 +185,15 @@ function M.next_note(state)
 
   for i, note in ipairs(all_notes) do
     local nc = note.chapter or 0
-    if nc > ch or (nc == ch and note.line > line) then
-      -- Jump to chapter if needed
+    local nl = note.start_line or note.line
+    if nc > ch or (nc == ch and nl > line) then
       if note.chapter and state.chapters and note.chapter ~= state.current_chapter then
         require("reader.navigate").load_chapter(state, note.chapter)
         M.render(state)
       end
       local max_line = vim.api.nvim_buf_line_count(state.buf)
-      vim.api.nvim_win_set_cursor(win, { math.min(note.line, max_line), 0 })
+      local target_line = note.start_line or note.line
+      vim.api.nvim_win_set_cursor(win, { math.min(target_line, max_line), note.start_col or 0 })
       vim.api.nvim_echo({ { string.format("Note %d/%d: %s", i, #all_notes, note.text), "Comment" } }, false, {})
       vim.defer_fn(function() vim.api.nvim_echo({ { "" } }, false, {}) end, 2000)
       return
@@ -177,13 +220,15 @@ function M.prev_note(state)
   for i = #all_notes, 1, -1 do
     local note = all_notes[i]
     local nc = note.chapter or 0
-    if nc < ch or (nc == ch and note.line < line) then
+    local nl = note.start_line or note.line
+    if nc < ch or (nc == ch and nl < line) then
       if note.chapter and state.chapters and note.chapter ~= state.current_chapter then
         require("reader.navigate").load_chapter(state, note.chapter)
         M.render(state)
       end
       local max_line = vim.api.nvim_buf_line_count(state.buf)
-      vim.api.nvim_win_set_cursor(win, { math.min(note.line, max_line), 0 })
+      local target_line = note.start_line or note.line
+      vim.api.nvim_win_set_cursor(win, { math.min(target_line, max_line), note.start_col or 0 })
       vim.api.nvim_echo({ { string.format("Note %d/%d: %s", i, #all_notes, note.text), "Comment" } }, false, {})
       vim.defer_fn(function() vim.api.nvim_echo({ { "" } }, false, {}) end, 2000)
       return
@@ -226,7 +271,8 @@ function M.show_notes(state)
       end
       local win = vim.api.nvim_get_current_win()
       local max_line = vim.api.nvim_buf_line_count(state.buf)
-      vim.api.nvim_win_set_cursor(win, { math.min(note.line, max_line), 0 })
+      local target_line = note.start_line or note.line
+      vim.api.nvim_win_set_cursor(win, { math.min(target_line, max_line), note.start_col or 0 })
     end)
   end)
 end

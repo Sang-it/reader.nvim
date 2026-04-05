@@ -19,6 +19,8 @@ M.defaults = {
   show_highlights = true,
   -- Auto-open reader for these filetypes on BufEnter (e.g. {"md", "txt", "epub"})
   auto_open = {},
+  -- Words per minute for auto-scroll mode
+  auto_scroll_wpm = 200,
   -- Keybindings (set to false to disable)
   keys = {
     quit = "q",
@@ -43,6 +45,7 @@ M.defaults = {
     list_highlights = "S",
     toggle_highlights = "gs",
     dict_lookup = "gd",
+    toggle_auto_scroll = "g ",
   },
 }
 

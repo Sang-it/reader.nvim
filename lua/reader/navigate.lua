@@ -49,6 +49,9 @@ end
 --- Update focus based on current cursor position
 ---@param state ReaderState
 function M.update_focus(state)
+  if state.auto_scroll_active then
+    return
+  end
   local win = vim.api.nvim_get_current_win()
   local cursor_line = vim.api.nvim_win_get_cursor(win)[1] - 1
 
@@ -74,6 +77,7 @@ end
 ---@param state ReaderState
 ---@param chapter_index number 1-based
 function M.load_chapter(state, chapter_index)
+  require("reader.autoscroll").clear(state.buf)
   if not state.chapters or chapter_index < 1 or chapter_index > #state.chapters then
     return false
   end

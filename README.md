@@ -18,6 +18,7 @@ A distraction-free ebook reader for Neovim. Highlights the current paragraph and
 - Remembers your reading position per file (chapter + line)
 - EPUB parsing is cached for fast reopening
 - Dictionary lookup with inline definitions (visual select + `gd`)
+- Auto-scroll mode: word-by-word reading at configurable speed (`g<Space>`)
 - Auto-open reader for configured filetypes
 - Normal vim motions for navigation
 
@@ -76,6 +77,9 @@ use {
 " Highlights (select text in visual mode)
 :ReaderHighlights        " Show highlights picker
 :ReaderHighlightDelete   " Remove a highlight
+
+" Auto-scroll
+:ReaderAutoScrollToggle  " Toggle word-by-word auto-scroll
 ```
 
 ## Keybindings
@@ -106,6 +110,7 @@ All standard vim motions work (`j`, `k`, `gg`, `G`, `Ctrl-d`, `Ctrl-u`, `/`, etc
 | `S` | Show highlights picker |
 | `gs` | Toggle highlights visibility |
 | `gd` | Dictionary lookup (visual mode) |
+| `g<Space>` | Toggle auto-scroll mode |
 
 ## Configuration
 
@@ -131,6 +136,9 @@ require("reader").setup({
 
   -- Show text highlights on open (toggle with gs)
   show_highlights = true,
+
+  -- Words per minute for auto-scroll mode (toggle with g<Space>)
+  auto_scroll_wpm = 200,
 
   -- Auto-open reader for these filetypes on BufEnter
   auto_open = {}, -- e.g. {"md", "txt", "epub"}
@@ -159,6 +167,7 @@ require("reader").setup({
     list_highlights = "S",
     toggle_highlights = "gs",
     dict_lookup = "gd",
+    toggle_auto_scroll = "g ",
   },
 })
 ```

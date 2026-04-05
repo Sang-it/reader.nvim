@@ -147,6 +147,7 @@ function M.open(filepath)
   marker.init()
   marker.render(state)
   dict.setup_highlights()
+  require("reader.autoscroll").setup_highlights()
 
   -- Show chapter info for epub (auto-clears after 2s)
   if state.chapters and #state.chapters > 0 then
@@ -175,6 +176,7 @@ function M.close()
     line
   )
 
+  require("reader.autoscroll").clear(M._state.buf)
   notes.clear(M._state.buf)
   marker.clear(M._state.buf)
   if config.get().zen_mode then

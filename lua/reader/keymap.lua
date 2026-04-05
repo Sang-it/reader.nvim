@@ -169,6 +169,14 @@ local function attach_shared(buf, state)
       dict.lookup(state)
     end, opts)
   end
+
+  -- Auto-scroll
+  local autoscroll = require("reader.autoscroll")
+  if cfg.keys.toggle_auto_scroll then
+    vim.keymap.set("n", cfg.keys.toggle_auto_scroll, function()
+      autoscroll.toggle(state)
+    end, opts)
+  end
 end
 
 ---@param buf number

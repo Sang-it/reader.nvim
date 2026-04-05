@@ -87,6 +87,13 @@ vim.api.nvim_create_user_command("ReaderHighlightDelete", function()
   end
 end, { desc = "Remove a highlight" })
 
+vim.api.nvim_create_user_command("ReaderAutoScrollToggle", function()
+  local state = require("reader")._state
+  if state then
+    require("reader.autoscroll").toggle(state)
+  end
+end, { desc = "Toggle auto-scroll mode" })
+
 vim.api.nvim_create_user_command("ReaderGo", function(opts)
   local state = require("reader")._state
   if not state then

@@ -21,6 +21,10 @@ M.defaults = {
   auto_open = {},
   -- Words per minute for auto-scroll mode
   auto_scroll_wpm = 200,
+  -- Number of words highlighted at a time during auto-scroll
+  auto_scroll_words = 3,
+  -- Pause at sentence endings (. ! ?) during auto-scroll
+  auto_scroll_sentence_pause = false,
   -- Keybindings (set to false to disable)
   keys = {
     quit = "q",

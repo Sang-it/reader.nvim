@@ -140,6 +140,12 @@ require("reader").setup({
   -- Words per minute for auto-scroll mode (toggle with g<Space>)
   auto_scroll_wpm = 200,
 
+  -- Number of words highlighted at a time during auto-scroll
+  auto_scroll_words = 3,
+
+  -- Pause at sentence endings (. ! ?) during auto-scroll
+  auto_scroll_sentence_pause = false,
+
   -- Auto-open reader for these filetypes on BufEnter
   auto_open = {}, -- e.g. {"md", "txt", "epub"}
 

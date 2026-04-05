@@ -9,6 +9,7 @@ local word_idx = nil -- 1-based
 local words_on_line = nil -- list of {col_start, col_end}
 local parked_line = nil -- 0-indexed blank line to park cursor on
 local saved_guicursor = nil
+local interval_ms = 300
 
 function M.setup_highlights()
   vim.api.nvim_set_hl(0, "ReaderAutoScroll", {
@@ -35,12 +36,19 @@ local function parse_words(line_text)
   return words
 end
 
---- Highlight the current word, dim everything else
+--- Check if a word ends with sentence-ending punctuation
+---@param line_text string
+---@param word table {col_start, col_end}
+---@return boolean
+local function is_sentence_end(line_text, word)
+  local ch = line_text:sub(word.col_end, word.col_end)
+  return ch == "." or ch == "!" or ch == "?"
+end
+
+--- Highlight a single range and dim everything else
 ---@param buf number
----@param line number 0-indexed
----@param col_start number 0-indexed
----@param col_end number byte position (exclusive for extmark)
-local function highlight_word(buf, line, col_start, col_end)
+---@param range table {line=number, col_start=number, col_end=number}
+local function highlight_range(buf, range)
   if not vim.api.nvim_buf_is_valid(buf) then
     return
   end
@@ -56,9 +64,9 @@ local function highlight_word(buf, line, col_start, col_end)
     })
   end
 
-  vim.api.nvim_buf_set_extmark(buf, ns, line, col_start, {
-    end_row = line,
-    end_col = col_end,
+  vim.api.nvim_buf_set_extmark(buf, ns, range.line, range.col_start, {
+    end_row = range.line,
+    end_col = range.col_end,
     hl_group = "ReaderAutoScroll",
     priority = 210,
   })
@@ -70,7 +78,6 @@ end
 ---@return number 0-indexed line
 local function find_blank_line(buf, near_line)
   local line_count = vim.api.nvim_buf_line_count(buf)
-  -- Search forward then backward for a blank line
   for offset = 1, line_count do
     local fwd = near_line + offset
     if fwd < line_count then
@@ -87,7 +94,6 @@ local function find_blank_line(buf, near_line)
       end
     end
   end
-  -- No blank line found; fall back to line 0
   return 0
 end
 
@@ -108,7 +114,7 @@ end
 
 --- Advance to the next word. Returns false at end of buffer.
 ---@return boolean
-local function advance()
+local function advance_one()
   if not active or not current_buf then
     return false
   end
@@ -128,32 +134,147 @@ local function advance()
   return true
 end
 
-local function on_tick()
-  vim.schedule(function()
-    if not active then
-      return
-    end
+--- Get the screen row for a buffer position (detects visual line wraps)
+---@param win number
+---@param lnum number 1-indexed buffer line
+---@param col number 0-indexed byte column
+---@return number screen row
+local function screen_row(win, lnum, col)
+  local pos = vim.fn.screenpos(win, lnum, col + 1) -- screenpos uses 1-indexed col
+  return pos.row
+end
 
-    local ok = advance()
-    if not ok then
-      M.stop()
-      require("reader.util").notify("reader.nvim: Auto-scroll reached end", vim.log.levels.INFO)
-      return
+--- Advance words on the current visual line only (up to count).
+--- Stops early at sentence-ending punctuation or visual line wrap boundary.
+---@param count number max words to collect
+---@return table|nil range {line, col_start, col_end}, number words_collected, boolean hit_sentence_end
+local function advance_line_group(count)
+  local start_line = nil
+  local col_start = nil
+  local col_end = nil
+  local collected = 0
+  local hit_end = false
+  local group_screen_row = nil
+  local win = vim.api.nvim_get_current_win()
+
+  for _ = 1, count do
+    local prev_line = word_line
+    local prev_idx = word_idx
+    local prev_words = words_on_line
+
+    if not advance_one() then
+      break
     end
 
     local word = words_on_line[word_idx]
-    highlight_word(current_buf, word_line, word.col_start, word.col_end)
+    local row = screen_row(win, word_line + 1, word.col_start)
 
-    -- Park cursor on a blank line so it doesn't overlap the highlighted word
-    parked_line = find_blank_line(current_buf, word_line)
-    local win = vim.api.nvim_get_current_win()
-    vim.api.nvim_win_set_cursor(win, { parked_line + 1, 0 })
+    if not group_screen_row then
+      group_screen_row = row
+    elseif row ~= group_screen_row then
+      word_line = prev_line
+      word_idx = prev_idx
+      words_on_line = prev_words
+      break
+    end
 
-    -- Scroll viewport to keep the highlighted word visible
-    local win_height = vim.api.nvim_win_get_height(win)
-    local target = word_line + 1 -- 1-indexed
-    local topline = math.max(1, target - math.floor(win_height / 2))
-    vim.fn.winrestview({ topline = topline })
+    if not start_line then
+      start_line = word_line
+      col_start = word.col_start
+    end
+    col_end = word.col_end
+    collected = collected + 1
+
+    local line_text = vim.api.nvim_buf_get_lines(current_buf, word_line, word_line + 1, false)[1] or ""
+    if is_sentence_end(line_text, word) then
+      hit_end = true
+      break
+    end
+  end
+
+  if collected == 0 then
+    return nil, 0, false
+  end
+  return { line = start_line, col_start = col_start, col_end = col_end }, collected, hit_end
+end
+
+--- Display a range, park cursor on a blank line, and scroll viewport
+---@param range table {line, col_start, col_end}
+local function display_range(range)
+  highlight_range(current_buf, range)
+
+  parked_line = find_blank_line(current_buf, range.line)
+  local win = vim.api.nvim_get_current_win()
+  vim.api.nvim_win_set_cursor(win, { parked_line + 1, 0 })
+
+  local win_height = vim.api.nvim_win_get_height(win)
+  local target = range.line + 1
+  local topline = math.max(1, target - math.floor(win_height / 2))
+  vim.fn.winrestview({ topline = topline })
+end
+
+-- Forward declarations for mutual recursion
+local schedule_next
+local show_group
+
+--- Show a group of words, splitting across visual lines with full-interval pauses.
+--- Calls schedule_next when the entire group is done.
+---@param word_count number total words for the group
+---@param per_word_ms number milliseconds per word (for sentence pause)
+---@param sentence_pause boolean whether to add extra pause at sentence endings
+show_group = function(word_count, per_word_ms, sentence_pause)
+  local range, collected, hit_sentence_end = advance_line_group(word_count)
+  if not range then
+    M.stop()
+    require("reader.util").notify("reader.nvim: Auto-scroll reached end", vim.log.levels.INFO)
+    return
+  end
+
+  display_range(range)
+  local remaining = word_count - collected
+
+  if remaining > 0 and not hit_sentence_end then
+    if timer then
+      timer:stop()
+      timer:close()
+    end
+    timer = vim.uv.new_timer()
+    timer:start(interval_ms, 0, function()
+      vim.schedule(function()
+        if not active then
+          return
+        end
+        show_group(remaining, per_word_ms, sentence_pause)
+      end)
+    end)
+  else
+    local next_delay = interval_ms
+    if hit_sentence_end and sentence_pause then
+      next_delay = next_delay + per_word_ms
+    end
+    schedule_next(next_delay)
+  end
+end
+
+schedule_next = function(delay)
+  if not active then
+    return
+  end
+  if timer then
+    timer:stop()
+    timer:close()
+  end
+  timer = vim.uv.new_timer()
+  timer:start(delay, 0, function()
+    vim.schedule(function()
+      if not active then
+        return
+      end
+      local cfg = require("reader.config").get()
+      local count = cfg.auto_scroll_words or 3
+      local per_word_ms = math.floor(60000 / (cfg.auto_scroll_wpm or 200))
+      show_group(count, per_word_ms, cfg.auto_scroll_sentence_pause)
+    end)
   end)
 end
 
@@ -165,7 +286,9 @@ function M.start(state)
 
   local cfg = require("reader.config").get()
   local wpm = cfg.auto_scroll_wpm or 200
-  local interval_ms = math.floor(60000 / wpm)
+  local word_count = cfg.auto_scroll_words or 3
+  local per_word_ms = math.floor(60000 / wpm)
+  interval_ms = per_word_ms * word_count
 
   current_buf = state.buf
   active = true
@@ -190,16 +313,17 @@ function M.start(state)
     word_line = next_line
     text = vim.api.nvim_buf_get_lines(current_buf, word_line, word_line + 1, false)[1] or ""
     words_on_line = parse_words(text)
-    word_idx = 1
+    word_idx = 0
   else
-    word_idx = 1
+    local start_idx = 1
     for i, w in ipairs(words_on_line) do
       if w.col_start >= cursor_col then
-        word_idx = i
+        start_idx = i
         break
       end
-      word_idx = i
+      start_idx = i
     end
+    word_idx = start_idx - 1
   end
 
   require("reader.highlight").clear(current_buf)
@@ -213,22 +337,10 @@ function M.start(state)
 
   M.setup_highlights()
 
-  local word = words_on_line[word_idx]
-  highlight_word(current_buf, word_line, word.col_start, word.col_end)
-
-  -- Park cursor on a blank line so it doesn't overlap the highlighted word
-  parked_line = find_blank_line(current_buf, word_line)
-  vim.api.nvim_win_set_cursor(win, { parked_line + 1, 0 })
-
-  local win_height = vim.api.nvim_win_get_height(win)
-  local target = word_line + 1
-  local topline = math.max(1, target - math.floor(win_height / 2))
-  vim.fn.winrestview({ topline = topline })
+  -- Show initial group
+  show_group(word_count, per_word_ms, cfg.auto_scroll_sentence_pause)
 
   require("reader.util").notify("reader.nvim: Auto-scroll started", vim.log.levels.INFO)
-
-  timer = vim.uv.new_timer()
-  timer:start(interval_ms, interval_ms, on_tick)
 end
 
 function M.stop()

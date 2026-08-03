@@ -131,6 +131,9 @@ require("reader").setup({
   -- Cursor hiding: "whitespace" (hide on blank lines), "always", or false
   hide_cursor = "whitespace",
 
+  -- Skip blank lines when moving with j/k
+  skip_blank_lines = true,
+
   -- Show notes ghost text on open (toggle with gn)
   show_notes = true,
 

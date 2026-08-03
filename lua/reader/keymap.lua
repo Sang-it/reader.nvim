@@ -39,6 +39,41 @@ local function update_cursor_visibility()
   end
 end
 
+---@param buf number
+---@param lnum number 1-based
+---@return boolean
+local function is_blank(buf, lnum)
+  local line = vim.api.nvim_buf_get_lines(buf, lnum - 1, lnum, false)[1]
+  return line == nil or line:match("^%s*$") ~= nil
+end
+
+--- Move the cursor vertically, skipping blank lines between paragraphs
+---@param dir number 1 for down, -1 for up
+local function move_skip_blank(dir)
+  local win = vim.api.nvim_get_current_win()
+  local buf = vim.api.nvim_win_get_buf(win)
+  local last = vim.api.nvim_buf_line_count(buf)
+  local pos = vim.api.nvim_win_get_cursor(win)
+  local line = pos[1]
+
+  for _ = 1, vim.v.count1 do
+    local target = line + dir
+    while target >= 1 and target <= last and is_blank(buf, target) do
+      target = target + dir
+    end
+    if target < 1 or target > last then
+      break
+    end
+    line = target
+  end
+
+  if line == pos[1] then
+    return
+  end
+  local len = #vim.api.nvim_buf_get_lines(buf, line - 1, line, false)[1]
+  vim.api.nvim_win_set_cursor(win, { line, math.min(pos[2], math.max(len - 1, 0)) })
+end
+
 --- Set up shared keymaps (quit, chapters, bookmarks)
 ---@param buf number
 ---@param state ReaderState
@@ -50,6 +85,15 @@ local function attach_shared(buf, state)
   vim.keymap.set("n", cfg.keys.quit, function()
     require("reader").close()
   end, opts)
+
+  if cfg.skip_blank_lines then
+    vim.keymap.set("n", "j", function()
+      move_skip_blank(1)
+    end, opts)
+    vim.keymap.set("n", "k", function()
+      move_skip_blank(-1)
+    end, opts)
+  end
 
   if state.chapters then
     if cfg.keys.next_chapter then

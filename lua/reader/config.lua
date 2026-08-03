@@ -13,6 +13,8 @@ M.defaults = {
   center_focus = true,
   -- Hide cursor on whitespace: "whitespace" (only on blank chars), "always", or false
   hide_cursor = "whitespace",
+  -- Skip blank lines when moving with j/k
+  skip_blank_lines = true,
   -- Show notes ghost text on open
   show_notes = true,
   -- Show text highlights on open
